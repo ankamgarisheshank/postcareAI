@@ -1,14 +1,15 @@
 const jwt = require('jsonwebtoken');
-const Doctor = require('../models/Doctor');
+const User = require('../models/User');
 
 /**
  * Protect routes - verify JWT token
+ * Attaches req.user (works for both doctor and patient)
+ * Also attaches req.doctor as alias for backward compatibility
  */
 const protect = async (req, res, next) => {
     try {
         let token;
 
-        // Check for Bearer token in Authorization header
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
             token = req.headers.authorization.split(' ')[1];
         }
@@ -20,19 +21,18 @@ const protect = async (req, res, next) => {
             });
         }
 
-        // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Attach doctor to request
-        const doctor = await Doctor.findById(decoded.id);
-        if (!doctor) {
+        const user = await User.findById(decoded.id);
+        if (!user) {
             return res.status(401).json({
                 success: false,
-                message: 'Not authorized - doctor not found',
+                message: 'Not authorized - user not found',
             });
         }
 
-        req.doctor = doctor;
+        req.user = user;
+        req.doctor = user; // backward compat
         next();
     } catch (error) {
         console.error('Auth middleware error:', error.message);
@@ -48,10 +48,10 @@ const protect = async (req, res, next) => {
  */
 const authorize = (...roles) => {
     return (req, res, next) => {
-        if (!roles.includes(req.doctor.role)) {
+        if (!roles.includes(req.user.role)) {
             return res.status(403).json({
                 success: false,
-                message: `Role '${req.doctor.role}' is not authorized to access this route`,
+                message: `Role '${req.user.role}' is not authorized to access this route`,
             });
         }
         next();

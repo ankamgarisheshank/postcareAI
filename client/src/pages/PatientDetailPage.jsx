@@ -241,7 +241,7 @@ const PatientDetailPage = () => {
                                     <div className="card-top-line" />
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex gap-4 items-center">
-                                            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>💊</div>
+                                            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>💊</div>
                                             <div>
                                                 <h4 className="font-extrabold text-base text-primary tracking-tight">{med.medicineName}</h4>
                                                 <div className="flex gap-2 mt-1" style={{ flexWrap: 'wrap' }}>

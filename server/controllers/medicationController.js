@@ -1,156 +1,60 @@
-const Medication = require('../models/Medication');
+const Prescription = require('../models/Prescription');
 const Patient = require('../models/Patient');
 const { asyncHandler } = require('../middleware/errorHandler');
 
-/**
- * @desc    Add medication
- * @route   POST /api/medications
- * @access  Private
- */
 const addMedication = asyncHandler(async (req, res) => {
-    const { patient: patientId, ...medData } = req.body;
-
-    // Verify patient belongs to doctor
-    const patient = await Patient.findOne({
-        _id: patientId,
-        doctor: req.doctor._id,
-    });
-
-    if (!patient) {
-        res.status(404);
-        throw new Error('Patient not found');
-    }
-
-    const medication = await Medication.create({
+    const { patient: patientId, patientId: pId, drugName, medicineName, ...medData } = req.body;
+    const targetId = patientId || pId;
+    const pat = await Patient.findOne({ _id: targetId, doctor: req.user._id });
+    if (!pat) { res.status(404); throw new Error('Patient not found'); }
+    const prescription = await Prescription.create({
         ...medData,
-        patient: patientId,
-        doctor: req.doctor._id,
+        patientId: targetId,
+        doctor: req.user._id,
+        drugName: drugName || medicineName,
+        startDate: medData.startDate || new Date(),
+        endDate: medData.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
-
-    res.status(201).json({
-        success: true,
-        data: medication,
-    });
+    res.status(201).json({ success: true, data: prescription });
 });
 
-/**
- * @desc    Get medications for a patient
- * @route   GET /api/medications/:patientId
- * @access  Private
- */
 const getMedications = asyncHandler(async (req, res) => {
-    // Verify patient belongs to doctor
-    const patient = await Patient.findOne({
-        _id: req.params.patientId,
-        doctor: req.doctor._id,
-    });
-
-    if (!patient) {
-        res.status(404);
-        throw new Error('Patient not found');
-    }
-
-    const medications = await Medication.find({
-        patient: req.params.patientId,
-    }).sort({ createdAt: -1 });
-
-    res.json({
-        success: true,
-        data: medications,
-    });
+    const pat = await Patient.findOne({ _id: req.params.patientId, doctor: req.user._id });
+    if (!pat) { res.status(404); throw new Error('Patient not found'); }
+    const medications = await Prescription.find({ patientId: req.params.patientId }).sort({ createdAt: -1 });
+    res.json({ success: true, data: medications });
 });
 
-/**
- * @desc    Update medication
- * @route   PUT /api/medications/:id
- * @access  Private
- */
 const updateMedication = asyncHandler(async (req, res) => {
-    let medication = await Medication.findOne({
-        _id: req.params.id,
-        doctor: req.doctor._id,
-    });
-
-    if (!medication) {
-        res.status(404);
-        throw new Error('Medication not found');
-    }
-
-    medication = await Medication.findByIdAndUpdate(req.params.id, req.body, {
-        new: true,
-        runValidators: true,
-    });
-
-    res.json({
-        success: true,
-        data: medication,
-    });
+    let med = await Prescription.findOne({ _id: req.params.id, doctor: req.user._id });
+    if (!med) { res.status(404); throw new Error('Medication not found'); }
+    med = await Prescription.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    res.json({ success: true, data: med });
 });
 
-/**
- * @desc    Delete medication
- * @route   DELETE /api/medications/:id
- * @access  Private
- */
 const deleteMedication = asyncHandler(async (req, res) => {
-    const medication = await Medication.findOne({
-        _id: req.params.id,
-        doctor: req.doctor._id,
-    });
-
-    if (!medication) {
-        res.status(404);
-        throw new Error('Medication not found');
-    }
-
-    await Medication.findByIdAndDelete(req.params.id);
-
-    res.json({
-        success: true,
-        message: 'Medication deleted successfully',
-    });
+    const med = await Prescription.findOne({ _id: req.params.id, doctor: req.user._id });
+    if (!med) { res.status(404); throw new Error('Medication not found'); }
+    await Prescription.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Medication deleted successfully' });
 });
 
-/**
- * @desc    Bulk add medications (from prescription parsing)
- * @route   POST /api/medications/bulk
- * @access  Private
- */
 const bulkAddMedications = asyncHandler(async (req, res) => {
     const { patientId, medications } = req.body;
-
-    // Verify patient belongs to doctor
-    const patient = await Patient.findOne({
-        _id: patientId,
-        doctor: req.doctor._id,
-    });
-
-    if (!patient) {
-        res.status(404);
-        throw new Error('Patient not found');
-    }
-
+    const pat = await Patient.findOne({ _id: patientId, doctor: req.user._id });
+    if (!pat) { res.status(404); throw new Error('Patient not found'); }
     const medsToCreate = medications.map((med) => ({
-        ...med,
-        patient: patientId,
-        doctor: req.doctor._id,
+        patientId: patientId,
+        doctor: req.user._id,
+        drugName: med.drugName || med.medicineName,
+        dosage: med.dosage,
+        frequency: med.frequency || 'Once daily',
+        instructions: med.foodInstruction || med.instructions || '',
         startDate: med.startDate || new Date(),
-        endDate: med.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default 30 days
+        endDate: med.endDate || new Date(Date.now() + (parseInt(med.duration) || 30) * 24 * 60 * 60 * 1000),
     }));
-
-    const created = await Medication.insertMany(medsToCreate);
-
-    res.status(201).json({
-        success: true,
-        data: created,
-        count: created.length,
-    });
+    const created = await Prescription.insertMany(medsToCreate);
+    res.status(201).json({ success: true, data: created, count: created.length });
 });
 
-module.exports = {
-    addMedication,
-    getMedications,
-    updateMedication,
-    deleteMedication,
-    bulkAddMedications,
-};
+module.exports = { addMedication, getMedications, updateMedication, deleteMedication, bulkAddMedications };

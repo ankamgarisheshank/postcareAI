@@ -6,11 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../context/AuthContext';
 import toast, { Toaster } from 'react-hot-toast';
-import { HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
+import { HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff, HiOutlinePhone } from 'react-icons/hi';
 
 const loginSchema = z.object({
-    email: z.string().email('Invalid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    identifier: z.string().min(1, 'Email or phone is required'),
+    password: z.string().min(4, 'Password must be at least 4 characters'),
 });
 
 const LoginPage = () => {
@@ -19,15 +19,18 @@ const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const { register, handleSubmit, formState: { errors }, watch } = useForm({
         resolver: zodResolver(loginSchema),
     });
+
+    const identifierValue = watch('identifier', '');
+    const isPhone = identifierValue && !identifierValue.includes('@');
 
     const onSubmit = async (data) => {
         setIsLoading(true);
         try {
-            await login(data.email, data.password);
-            toast.success('Welcome back, Doctor!');
+            await login(data.identifier, data.password);
+            toast.success('Welcome back!');
             navigate('/dashboard');
         } catch (error) {
             toast.error(error.response?.data?.message || 'Login failed');
@@ -58,18 +61,18 @@ const LoginPage = () => {
                     className="auth-card">
                     <div className="top-accent" />
                     <h2 className="text-2xl font-bold mb-2 text-primary tracking-tight">Welcome Back</h2>
-                    <p className="text-sm mb-8 text-muted font-medium">Sign in to your doctor account to manage patients</p>
+                    <p className="text-sm mb-8 text-muted font-medium">Sign in with your email or phone number</p>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                        {/* Email */}
+                        {/* Email or Phone */}
                         <div className="input-group">
-                            <label className="block text-sm font-semibold mb-2 text-secondary">Email Address</label>
+                            <label className="block text-sm font-semibold mb-2 text-secondary">Email or Phone</label>
                             <div className="relative">
-                                <HiOutlineMail className="input-icon" size={20} />
-                                <input {...register('email')} type="email" placeholder="doctor@hospital.com"
+                                {isPhone ? <HiOutlinePhone className="input-icon" size={20} /> : <HiOutlineMail className="input-icon" size={20} />}
+                                <input {...register('identifier')} type="text" placeholder="doctor@hospital.com or +91 9876543210"
                                     className="input-field has-icon h-48" />
                             </div>
-                            {errors.email && <p className="form-error"><span className="form-error-dot" /> {errors.email.message}</p>}
+                            {errors.identifier && <p className="form-error"><span className="form-error-dot" /> {errors.identifier.message}</p>}
                         </div>
 
                         {/* Password */}
@@ -100,14 +103,18 @@ const LoginPage = () => {
                                     <div className="spinner spinner-sm spinner-white" />
                                     Authenticating...
                                 </span>
-                            ) : 'Sign In to Dashboard'}
+                            ) : 'Sign In'}
                         </motion.button>
                     </form>
 
-                    <p className="text-center text-sm mt-8 text-muted font-medium">
-                        Don't have an account?{' '}
-                        <Link to="/register" className="link-primary">Create one now</Link>
-                    </p>
+                    <div className="text-center mt-8 space-y-2">
+                        <p className="text-sm text-muted font-medium">
+                            Doctor? <Link to="/register" className="link-primary">Register as Doctor</Link>
+                        </p>
+                        <p className="text-sm text-muted font-medium">
+                            Patient? <Link to="/register/patient" className="link-primary">Register as Patient</Link>
+                        </p>
+                    </div>
                 </motion.div>
             </motion.div>
         </div>

@@ -4,7 +4,7 @@ import api from '../services/api';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [doctor, setDoctor] = useState(null);
+    const [user, setUser] = useState(null);
     const [token, setToken] = useState(() => localStorage.getItem('postcareai-token'));
     const [loading, setLoading] = useState(true);
 
@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     const fetchProfile = async () => {
         try {
             const { data } = await api.get('/auth/me');
-            setDoctor(data.data);
+            setUser(data.data);
         } catch (error) {
             console.error('Profile fetch failed:', error);
             logout();
@@ -28,32 +28,66 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const login = async (email, password) => {
-        const { data } = await api.post('/auth/login', { email, password });
-        const { token: newToken, ...doctorData } = data.data;
+    // Login supports email OR phone + password
+    const login = async (identifier, password) => {
+        const payload = { password };
+        if (identifier.includes('@')) {
+            payload.email = identifier;
+        } else {
+            payload.phone = identifier;
+        }
+        const { data } = await api.post('/auth/login', payload);
+        const { token: newToken, ...userData } = data.data;
         localStorage.setItem('postcareai-token', newToken);
         setToken(newToken);
-        setDoctor(doctorData);
+        setUser(userData);
         return data;
     };
 
+    // Register doctor
     const register = async (formData) => {
         const { data } = await api.post('/auth/register', formData);
-        const { token: newToken, ...doctorData } = data.data;
+        const { token: newToken, ...userData } = data.data;
         localStorage.setItem('postcareai-token', newToken);
         setToken(newToken);
-        setDoctor(doctorData);
+        setUser(userData);
+        return data;
+    };
+
+    // Register patient
+    const registerPatient = async (formData) => {
+        const { data } = await api.post('/auth/register/patient', formData);
+        const { token: newToken, ...userData } = data.data;
+        localStorage.setItem('postcareai-token', newToken);
+        setToken(newToken);
+        setUser(userData);
         return data;
     };
 
     const logout = () => {
         localStorage.removeItem('postcareai-token');
         setToken(null);
-        setDoctor(null);
+        setUser(null);
     };
 
+    const isDoctor = user?.role === 'doctor';
+    const isPatient = user?.role === 'patient';
+
     return (
-        <AuthContext.Provider value={{ doctor, token, loading, login, register, logout, isAuthenticated: !!token }}>
+        <AuthContext.Provider value={{
+            user,
+            doctor: user,          // backward compat alias
+            token,
+            loading,
+            login,
+            register,
+            registerPatient,
+            logout,
+            isAuthenticated: !!token,
+            isDoctor,
+            isPatient,
+            role: user?.role,
+        }}>
             {children}
         </AuthContext.Provider>
     );

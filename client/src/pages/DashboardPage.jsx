@@ -7,8 +7,8 @@ import { HiOutlineUsers, HiOutlineHeart, HiOutlineExclamation, HiOutlineCalendar
 import toast from 'react-hot-toast';
 
 const statCards = [
-    { key: 'totalPatients', label: 'Total Patients', icon: HiOutlineUsers, gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)' },
-    { key: 'activeCases', label: 'Active Cases', icon: HiOutlineHeart, gradient: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
+    { key: 'totalPatients', label: 'Total Patients', icon: HiOutlineUsers, gradient: 'linear-gradient(135deg, #FFFFFF, #A3A3A3)' },
+    { key: 'activeCases', label: 'Active Cases', icon: HiOutlineHeart, gradient: 'linear-gradient(135deg, #525252, #404040)' },
     { key: 'highRiskAlerts', label: 'High Risk Alerts', icon: HiOutlineExclamation, gradient: 'linear-gradient(135deg, #ef4444, #dc2626)' },
     { key: 'todaysFollowUps', label: "Today's Follow-ups", icon: HiOutlineCalendar, gradient: 'linear-gradient(135deg, #10b981, #059669)' },
 ];
@@ -117,7 +117,7 @@ const DashboardPage = () => {
                             <XAxis dataKey="status" tick={{ fontSize: 11 }} />
                             <YAxis tick={{ fontSize: 11 }} />
                             <Tooltip contentStyle={tooltipStyle} />
-                            <Bar dataKey="count" name="Patients" fill="#6366f1" radius={[8, 8, 0, 0]} />
+                            <Bar dataKey="count" name="Patients" fill="#FFFFFF" radius={[8, 8, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </motion.div>
@@ -144,12 +144,12 @@ const DashboardPage = () => {
                             </div>
                         ) : dashData.recentAlerts.map(alert => (
                             <div key={alert._id} className="alert-card">
-                                <div className={`alert-dot ${alert.severity === 'High' ? 'alert-dot-high' : alert.severity === 'Medium' ? 'alert-dot-medium' : 'alert-dot-low'}`} />
+                                <div className={`alert-dot ${(alert.severity || '').toLowerCase() === 'high' ? 'alert-dot-high' : (alert.severity || '').toLowerCase() === 'medium' ? 'alert-dot-medium' : 'alert-dot-low'}`} />
                                 <div className="min-w-0" style={{ flex: 1 }}>
                                     <p className="text-sm font-bold truncate text-primary">{alert.patient?.fullName || 'Unknown Patient'}</p>
                                     <p className="text-xs text-muted mt-1 line-clamp-2">{alert.message}</p>
                                 </div>
-                                <span className={`badge ${alert.severity === 'High' ? 'badge-danger' : alert.severity === 'Medium' ? 'badge-warning' : 'badge-info'}`}>{alert.severity}</span>
+                                <span className={`badge ${(alert.severity || '').toLowerCase() === 'high' ? 'badge-danger' : (alert.severity || '').toLowerCase() === 'medium' ? 'badge-warning' : 'badge-info'}`}>{alert.severity}</span>
                             </div>
                         ))}
                     </div>
@@ -159,7 +159,7 @@ const DashboardPage = () => {
                 <motion.div variants={item} initial="hidden" animate="show" className="card flex flex-col">
                     <div className="flex items-center justify-between mb-6 pb-4 border-b">
                         <div className="flex items-center gap-2">
-                            <div style={{ padding: 8, background: 'rgba(99,102,241,0.1)', borderRadius: 8, display: 'flex' }}>
+                            <div style={{ padding: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 8, display: 'flex' }}>
                                 <HiOutlineUsers style={{ color: 'var(--primary)' }} size={20} />
                             </div>
                             <h3 className="text-xl font-bold text-primary">Newly Added Patients</h3>

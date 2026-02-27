@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const Medication = require('../models/Medication');
+const Prescription = require('../models/Prescription');
 const Patient = require('../models/Patient');
 const { sendMedicationReminder, sendFollowUpQuestion } = require('./twilioService');
 const { MED_TIMES } = require('../config/constants');
@@ -46,37 +46,38 @@ const sendReminders = async (timeSlot) => {
         const now = new Date();
 
         // Find active medications for this time slot
-        const medications = await Medication.find({
+        const medications = await Prescription.find({
             isActive: true,
             startDate: { $lte: now },
             endDate: { $gte: now },
-            [`frequency.${timeSlot}`]: true,
-        }).populate('patient', 'fullName phone status');
+        }).populate('patientId', 'name phone status');
 
         console.log(`Found ${medications.length} medications for ${timeSlot} reminders`);
 
         for (const med of medications) {
-            if (!med.patient || med.patient.status === 'Recovered') continue;
+            const patient = med.patientId;
+            if (!patient || patient.status === 'Recovered') continue;
 
             try {
                 const result = await sendMedicationReminder(
-                    med.patient.phone,
-                    med.patient.fullName,
-                    med.medicineName,
+                    patient.phone,
+                    patient.name,
+                    med.drugName,
                     med.dosage,
-                    med.foodInstruction,
+                    med.instructions,
                     timeSlot
                 );
 
                 // Log the reminder
+                if (!med.remindersSent) med.remindersSent = [];
                 med.remindersSent.push({
                     sentAt: new Date(),
-                    timeSlot,
+                    scheduledFor: timeSlot,
                     status: result.success ? 'sent' : 'failed',
                 });
                 await med.save();
             } catch (err) {
-                console.error(`Failed to send reminder for ${med.patient.fullName}:`, err.message);
+                console.error(`Failed to send reminder for ${patient.name}:`, err.message);
             }
         }
     } catch (error) {
@@ -97,9 +98,9 @@ const sendDailyFollowUps = async () => {
 
         for (const patient of activePatients) {
             try {
-                await sendFollowUpQuestion(patient.phone, patient.fullName);
+                await sendFollowUpQuestion(patient.phone, patient.name);
             } catch (err) {
-                console.error(`Failed to send follow-up to ${patient.fullName}:`, err.message);
+                console.error(`Failed to send follow-up to ${patient.name}:`, err.message);
             }
         }
     } catch (error) {

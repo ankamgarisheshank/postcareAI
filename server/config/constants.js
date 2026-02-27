@@ -24,6 +24,7 @@ module.exports = {
     // Roles
     ROLES: {
         DOCTOR: 'doctor',
+        PATIENT: 'patient',
         ADMIN: 'admin',
     },
 };

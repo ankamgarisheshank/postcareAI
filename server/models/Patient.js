@@ -1,25 +1,23 @@
 const mongoose = require('mongoose');
 
+/**
+ * Unified Patient Schema
+ * Compatible with BOTH mobile app (Next.js) and web app (Express).
+ * Mobile field names are canonical; web-specific fields are optional extensions.
+ */
 const patientSchema = new mongoose.Schema(
     {
-        doctor: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Doctor',
-            required: [true, 'Doctor reference is required'],
-            index: true,
-        },
-        fullName: {
+        // ─── Core fields (shared with mobile) ───
+        name: {
             type: String,
-            required: [true, 'Full name is required'],
+            required: [true, 'Name is required'],
             trim: true,
-            minlength: [2, 'Name must be at least 2 characters'],
-            maxlength: [100, 'Name cannot exceed 100 characters'],
         },
         age: {
             type: Number,
             required: [true, 'Age is required'],
-            min: [0, 'Age cannot be negative'],
-            max: [150, 'Age cannot exceed 150'],
+            min: 0,
+            max: 150,
         },
         gender: {
             type: String,
@@ -31,15 +29,13 @@ const patientSchema = new mongoose.Schema(
             required: [true, 'Phone number is required'],
             trim: true,
         },
-        address: {
+        surgeryType: {
             type: String,
             trim: true,
             default: '',
         },
-        location: {
-            lat: { type: Number },
-            lng: { type: Number },
-            formattedAddress: { type: String }
+        surgeryDate: {
+            type: Date,
         },
         admissionDate: {
             type: Date,
@@ -48,10 +44,39 @@ const patientSchema = new mongoose.Schema(
         dischargeDate: {
             type: Date,
         },
-        surgeryType: {
+        assignedDoctor: {
+            type: String,
+            default: '',
+        },
+        doctorPhone: {
+            type: String,
+            default: '',
+        },
+        riskStatus: {
+            type: String,
+            enum: ['stable', 'monitor', 'critical'],
+            default: 'stable',
+        },
+        recoveryNotes: {
+            type: String,
+            default: '',
+        },
+
+        // ─── Web-extended fields (optional) ───
+        doctor: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            index: true,
+        },
+        address: {
             type: String,
             trim: true,
             default: '',
+        },
+        location: {
+            lat: { type: Number },
+            lng: { type: Number },
+            formattedAddress: { type: String },
         },
         operationDate: {
             type: Date,
@@ -95,5 +120,6 @@ const patientSchema = new mongoose.Schema(
 // Index for efficient querying
 patientSchema.index({ doctor: 1, status: 1 });
 patientSchema.index({ doctor: 1, riskLevel: 1 });
+patientSchema.index({ assignedDoctor: 1 });
 
 module.exports = mongoose.model('Patient', patientSchema);

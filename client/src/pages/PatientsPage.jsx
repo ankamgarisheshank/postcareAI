@@ -8,6 +8,9 @@ import {
     HiOutlinePencil, HiOutlineFilter, HiOutlineViewGrid, HiOutlineViewList,
 } from 'react-icons/hi';
 
+const getStatusBadge = (s) => s === 'Active' ? 'badge-success' : s === 'Critical' ? 'badge-danger' : s === 'Recovered' ? 'badge-info' : 'badge-warning';
+const getRiskBadge = (r) => r === 'High' ? 'badge-danger' : r === 'Medium' ? 'badge-warning' : 'badge-success';
+
 const PatientsPage = () => {
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -154,10 +157,10 @@ const PatientsPage = () => {
                                     <td className="py-3 px-4">
                                         <div className="flex gap-1">
                                             <Link to={`/patients/${patient._id}`}>
-                                                <button className="p-1.5 rounded-lg" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }} title="View"><HiOutlineEye size={16} /></button>
+                                                <button className="p-1.5 rounded-lg" style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'var(--primary)' }} title="View"><HiOutlineEye size={16} /></button>
                                             </Link>
                                             <Link to={`/patients/edit/${patient._id}`}>
-                                                <button className="p-1.5 rounded-lg" style={{ background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4' }} title="Edit"><HiOutlinePencil size={16} /></button>
+                                                <button className="p-1.5 rounded-lg" style={{ background: 'rgba(82, 82, 82, 0.1)', color: 'var(--text-secondary)' }} title="Edit"><HiOutlinePencil size={16} /></button>
                                             </Link>
                                             <button onClick={() => handleDelete(patient._id, patient.fullName)} className="p-1.5 rounded-lg" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }} title="Delete"><HiOutlineTrash size={16} /></button>
                                         </div>

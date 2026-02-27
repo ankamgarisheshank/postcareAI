@@ -4,7 +4,7 @@ import { getDashboardStats, getPatients } from '../services/patientService';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import toast from 'react-hot-toast';
 
-const COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const COLORS = ['#FFFFFF', '#A3A3A3', '#10b981', '#f59e0b', '#ef4444', '#525252'];
 
 const AnalyticsPage = () => {
     const [data, setData] = useState(null);
@@ -50,10 +50,10 @@ const AnalyticsPage = () => {
     );
 
     const summaryCards = [
-        { label: 'Avg Recovery', value: `${patients.length > 0 ? Math.round(patients.reduce((s, p) => s + (p.recoveryScore || 0), 0) / patients.length) : 0}%`, color: '#6366f1', bg: 'rgba(99,102,241,0.08)' },
+        { label: 'Avg Recovery', value: `${patients.length > 0 ? Math.round(patients.reduce((s, p) => s + (p.recoveryScore || 0), 0) / patients.length) : 0}%`, color: '#FFFFFF', bg: 'rgba(255,255,255,0.08)' },
         { label: 'Active Patients', value: patients.filter(p => p.status === 'Active').length, color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
         { label: 'Critical Cases', value: patients.filter(p => p.status === 'Critical').length, color: '#ef4444', bg: 'rgba(239,68,68,0.08)' },
-        { label: 'Recovered', value: patients.filter(p => p.status === 'Recovered').length, color: '#06b6d4', bg: 'rgba(6,182,212,0.08)' },
+        { label: 'Recovered', value: patients.filter(p => p.status === 'Recovered').length, color: '#A3A3A3', bg: 'rgba(163,163,163,0.08)' },
     ];
 
     return (
@@ -140,7 +140,7 @@ const AnalyticsPage = () => {
                         <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                         <YAxis tick={{ fontSize: 11 }} />
                         <Tooltip contentStyle={tooltipStyle} />
-                        <Bar dataKey="value" fill="#8b5cf6" radius={[8, 8, 0, 0]} name="Patients" />
+                        <Bar dataKey="value" fill="#A3A3A3" radius={[8, 8, 0, 0]} name="Patients" />
                     </BarChart>
                 </ResponsiveContainer>
             </Card>

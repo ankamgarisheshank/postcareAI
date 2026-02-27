@@ -1,34 +1,51 @@
 const mongoose = require('mongoose');
 
+/**
+ * Unified Alert Schema
+ * Compatible with BOTH mobile and web alert models.
+ * Mobile uses: patientId, type, title, message, severity, isRead
+ * Web adds: doctor, resolved, resolvedAt, resolvedBy
+ */
 const alertSchema = new mongoose.Schema(
     {
-        patient: {
+        // ─── Core fields (shared with mobile) ───
+        patientId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Patient',
             required: [true, 'Patient reference is required'],
             index: true,
         },
-        doctor: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Doctor',
-            required: [true, 'Doctor reference is required'],
-            index: true,
-        },
-        severity: {
+        type: {
             type: String,
-            enum: ['Low', 'Medium', 'High'],
-            required: [true, 'Severity is required'],
-            default: 'Low',
+            enum: ['red_flag', 'medication_missed', 'patient_message', 'call_request', 'symptom', 'medication', 'emergency', 'system'],
+            required: true,
+            default: 'symptom',
+        },
+        title: {
+            type: String,
+            default: '',
         },
         message: {
             type: String,
             required: [true, 'Alert message is required'],
             trim: true,
         },
-        type: {
+        severity: {
             type: String,
-            enum: ['symptom', 'medication', 'emergency', 'system'],
-            default: 'symptom',
+            enum: ['low', 'medium', 'high'],
+            required: true,
+            default: 'medium',
+        },
+        isRead: {
+            type: Boolean,
+            default: false,
+        },
+
+        // ─── Web-extended fields ───
+        doctor: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            index: true,
         },
         resolved: {
             type: Boolean,
@@ -39,7 +56,7 @@ const alertSchema = new mongoose.Schema(
         },
         resolvedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Doctor',
+            ref: 'User',
         },
     },
     {
@@ -47,7 +64,7 @@ const alertSchema = new mongoose.Schema(
     }
 );
 
-// Index for unresolved alerts
 alertSchema.index({ doctor: 1, resolved: 1, severity: 1 });
+alertSchema.index({ patientId: 1, isRead: 1 });
 
 module.exports = mongoose.model('Alert', alertSchema);

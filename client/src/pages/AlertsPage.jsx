@@ -28,7 +28,7 @@ const AlertsPage = () => {
         catch { toast.error('Failed to resolve'); }
     };
 
-    const severityColor = (s) => s === 'High' ? '#ef4444' : s === 'Medium' ? '#f59e0b' : '#06b6d4';
+    const severityColor = (s) => { const sv = (s || '').toLowerCase(); return sv === 'high' ? '#ef4444' : sv === 'medium' ? '#f59e0b' : '#A3A3A3'; };
 
     return (
         <div className="space-y-6">
@@ -66,7 +66,7 @@ const AlertsPage = () => {
 
                             <div style={{ flex: 1, paddingLeft: 8 }}>
                                 <div className="flex items-center gap-3 mb-2">
-                                    <span className={`badge ${alert.severity === 'High' ? 'badge-danger' : alert.severity === 'Medium' ? 'badge-warning' : 'badge-info'}`}>
+                                    <span className={`badge ${(alert.severity || '').toLowerCase() === 'high' ? 'badge-danger' : (alert.severity || '').toLowerCase() === 'medium' ? 'badge-warning' : 'badge-info'}`}>
                                         {alert.severity}
                                     </span>
                                     <span className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>

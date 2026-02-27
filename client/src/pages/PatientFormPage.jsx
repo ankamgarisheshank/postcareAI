@@ -19,6 +19,7 @@ const schema = z.object({
     operationDate: z.string().optional(),
     diagnosis: z.string().optional(),
     treatmentSummary: z.string().optional(),
+    recoveryNotes: z.string().optional(),
     status: z.enum(['Active', 'Discharged', 'Critical', 'Recovered']).optional(),
     riskLevel: z.enum(['Low', 'Medium', 'High']).optional(),
 });
@@ -114,6 +115,7 @@ const PatientFormPage = () => {
                         <Field name="riskLevel" label="Risk Level" opts={['Low', 'Medium', 'High']} />
                         <Field name="diagnosis" label="Diagnosis" area />
                         <Field name="treatmentSummary" label="Treatment Summary" area />
+                        <Field name="recoveryNotes" label="Recovery Notes" area />
                     </div>
                 </motion.div>
 

@@ -59,7 +59,7 @@ const PatientMapPage = () => {
                         <Marker key={patient._id} position={[patient.location.lat, patient.location.lng]}>
                             <Popup>
                                 <div className="popup-card">
-                                    <h3><HiUser style={{ color: '#6366f1' }} /> {patient.fullName}</h3>
+                                    <h3><HiUser style={{ color: '#FFFFFF' }} /> {patient.fullName}</h3>
                                     <div className="flex items-center gap-2 mt-3 mb-2">
                                         <span className={`badge ${patient.status === 'Active' ? 'badge-success' : patient.status === 'Critical' ? 'badge-danger' : patient.status === 'Recovered' ? 'badge-info' : 'badge-warning'}`}>
                                             {patient.status}

@@ -7,25 +7,37 @@ import {
     HiOutlineHome, HiOutlineUsers, HiOutlineUserAdd,
     HiOutlineBell, HiOutlineChartBar, HiOutlineLogout,
     HiOutlineMenu, HiOutlineMap, HiOutlineX,
-    HiOutlineSun, HiOutlineMoon,
+    HiOutlineSun, HiOutlineMoon, HiOutlineHeart,
+    HiOutlineChatAlt2,
 } from 'react-icons/hi';
 
-const sidebarLinks = [
+const doctorLinks = [
     { path: '/dashboard', label: 'Dashboard', icon: HiOutlineHome },
     { path: '/patients', label: 'Patients', icon: HiOutlineUsers },
     { path: '/patients/map', label: 'Patient Map', icon: HiOutlineMap },
     { path: '/patients/add', label: 'Add Patient', icon: HiOutlineUserAdd },
     { path: '/alerts', label: 'Alerts', icon: HiOutlineBell },
     { path: '/analytics', label: 'Analytics', icon: HiOutlineChartBar },
+    { path: '/messages', label: 'Messages', icon: HiOutlineChatAlt2 },
+];
+
+const patientLinks = [
+    { path: '/my-recovery', label: 'My Recovery', icon: HiOutlineHeart },
+    { path: '/messages', label: 'AI Chat', icon: HiOutlineChatAlt2 },
+    { path: '/patients/map', label: 'Location Map', icon: HiOutlineMap },
+    { path: '/analytics', label: 'Analytics', icon: HiOutlineChartBar },
+    { path: '/alerts', label: 'My Alerts', icon: HiOutlineBell },
 ];
 
 const DashboardLayout = () => {
-    const { doctor, logout } = useAuth();
+    const { user, isDoctor, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const handleLogout = () => { logout(); navigate('/login'); };
+    const sidebarLinks = isDoctor ? doctorLinks : patientLinks;
+    const displayName = user?.fullName || user?.name || (isDoctor ? 'Doctor' : 'Patient');
 
     return (
         <div className="flex" style={{ minHeight: '100vh' }}>
@@ -79,13 +91,15 @@ const DashboardLayout = () => {
                     <div className="doctor-info">
                         <div className="flex items-center gap-3">
                             <div className="doctor-avatar">
-                                <span>{doctor?.fullName?.charAt(0) || 'D'}</span>
+                                <span>{displayName.charAt(0)}</span>
                             </div>
                             <div className="min-w-0" style={{ flex: 1 }}>
                                 <p className="text-sm font-bold truncate text-primary">
-                                    {doctor?.fullName?.startsWith('Dr.') ? doctor.fullName : `Dr. ${doctor?.fullName || 'Doctor'}`}
+                                    {isDoctor ? (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`) : displayName}
                                 </p>
-                                <p className="text-xs font-medium truncate text-muted">{doctor?.specialization || 'General'}</p>
+                                <p className="text-xs font-medium truncate text-muted">
+                                    {isDoctor ? (user?.specialization || 'General') : 'Patient'}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -109,7 +123,7 @@ const DashboardLayout = () => {
                     <div className="lg-show">
                         <p className="text-sm font-medium text-muted">
                             Welcome back, <span className="text-primary font-semibold">
-                                {doctor?.fullName?.startsWith('Dr.') ? doctor.fullName : `Dr. ${doctor?.fullName || ''}`}
+                                {isDoctor ? (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`) : displayName}
                             </span>
                         </p>
                     </div>
