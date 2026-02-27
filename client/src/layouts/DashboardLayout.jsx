@@ -71,7 +71,7 @@ const DashboardLayout = () => {
                         >
                             <link.icon size={22} />
                             <span className="link-tooltip">{link.label}</span>
-                            <span className="link-label" style={{ display: 'none' }}>{link.label}</span>
+                            <span className="link-label">{link.label}</span>
                         </NavLink>
                     ))}
                 </nav>
@@ -81,7 +81,7 @@ const DashboardLayout = () => {
                     <button onClick={handleLogout} className="sidebar-link" title="Logout">
                         <HiOutlineLogout size={22} />
                         <span className="link-tooltip">Logout</span>
-                        <span className="link-label" style={{ display: 'none' }}>Logout</span>
+                        <span className="link-label">Logout</span>
                     </button>
                 </div>
             </aside>

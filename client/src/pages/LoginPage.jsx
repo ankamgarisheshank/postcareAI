@@ -9,12 +9,12 @@ import toast, { Toaster } from 'react-hot-toast';
 import { HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
 
 const loginSchema = z.object({
-    email: z.string().email('Please enter a valid email address'),
+    identifier: z.string().min(1, 'Please enter your email or phone number'),
     password: z.string().min(4, 'Password must be at least 4 characters'),
 });
 
 const LoginPage = () => {
-    const { loginDoctor, loginPatient } = useAuth();
+    const { login } = useAuth();
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -24,11 +24,10 @@ const LoginPage = () => {
     const onSubmit = async (data) => {
         setIsLoading(true);
         try {
+            await login(data.identifier, data.password);
             if (loginMode === 'patient') {
-                await loginPatient(data);
                 navigate('/my-recovery');
             } else {
-                await loginDoctor(data);
                 navigate('/dashboard');
             }
             toast.success('Welcome back!');
@@ -72,13 +71,13 @@ const LoginPage = () => {
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                         <div className="input-group">
-                            <label>Email Address</label>
+                            <label>Email or Phone Number</label>
                             <div className="relative">
                                 <HiOutlineMail className="input-icon" size={20} />
-                                <input {...register('email')} type="email" placeholder="doctor@hospital.com"
-                                    className="input-field has-icon" style={{ height: 48 }} />
+                                <input {...register('identifier')} type="text" placeholder="doctor@hospital.com or +91 9876543210"
+                                    className="input-field has-icon" style={{ height: 48 }} autoComplete="username" />
                             </div>
-                            {errors.email && <p className="form-error"><span className="form-error-dot" /> {errors.email.message}</p>}
+                            {errors.identifier && <p className="form-error"><span className="form-error-dot" /> {errors.identifier.message}</p>}
                         </div>
 
                         <div className="input-group">
