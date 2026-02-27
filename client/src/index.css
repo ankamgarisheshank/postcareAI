@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -22,11 +23,19 @@
 }
 
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-
 /* ============ CSS Variables ============ */
 @layer base {
   :root {
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --primary-dark: #4f46e5;
+    --accent: #06b6d4;
+    --accent-light: #22d3ee;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --danger-light: #f87171;
+
     --bg-primary: #f8fafc;
     --bg-secondary: #ffffff;
     --bg-tertiary: #f1f5f9;
@@ -34,16 +43,24 @@
     --text-secondary: #475569;
     --text-muted: #94a3b8;
     --border: #e2e8f0;
+
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(226, 232, 240, 0.8);
   }
 
-  /* Light mode extras */
   .layout-theme-light {
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(226, 232, 240, 0.9);
   }
 }
 
 .dark {
+  --primary: #818cf8;
+  --primary-light: #a5b4fc;
+  --accent: #22d3ee;
+
   --bg-primary: #0a0e1a;
   --bg-secondary: #111827;
   --bg-tertiary: #1e293b;
@@ -51,9 +68,10 @@
   --text-secondary: #cbd5e1;
   --text-muted: #64748b;
   --border: #1e293b;
+
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.4);
-  --glass-bg: rgba(17, 24, 39, 0.7);
+  --glass-bg: rgba(17, 24, 39, 0.85);
   --glass-border: rgba(255, 255, 255, 0.08);
 }
 
@@ -97,6 +115,22 @@ body {
   background: var(--primary-light);
 }
 
+/* Custom scrollbar for overflow elements */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+  opacity: 0.5;
+}
+
 /* ============ Glass Morphism ============ */
 .glass {
   background: var(--glass-bg);
@@ -113,12 +147,18 @@ body {
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   box-shadow: var(--shadow-lg);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 .glass-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.12);
+}
+
+/* Ensure glass cards have solid fallback for better visibility */
+.dark .glass-card {
+  background: rgba(17, 24, 39, 0.9);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* ============ Neon Glow Effects ============ */
@@ -231,9 +271,8 @@ body {
 }
 
 .input-glow {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 16px;
   color: var(--text-primary);
@@ -245,16 +284,22 @@ body {
 
 .input-glow:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.07);
   border-color: var(--primary);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15),
-    inset 0 0 10px rgba(99, 102, 241, 0.05);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 .input-glow::placeholder {
   color: var(--text-muted);
-  opacity: 0.6;
+}
+
+.dark .input-glow {
+  background: var(--bg-tertiary);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .input-glow:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .input-group:focus-within label {
@@ -346,6 +391,99 @@ body {
   fill: var(--text-secondary);
   font-family: 'Poppins', sans-serif;
   font-size: 12px;
+}
+
+.recharts-default-tooltip {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  font-family: 'Poppins', sans-serif !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* ============ Dashboard Layout ============ */
+/* Sidebar - solid background for visibility */
+aside {
+  background: var(--bg-secondary) !important;
+  border-right: 1px solid var(--border);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.06);
+}
+
+.dark aside {
+  background: #0f172a !important;
+  border-right-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Dashboard header bar */
+header[class*="h-[72px]"],
+header.sticky {
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.dark header[class*="h-[72px]"],
+.dark header.sticky {
+  background: #0f172a !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Stat cards - ensure they have proper styling */
+[style*="linear-gradient(135deg, #6366f1"] {
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+[style*="linear-gradient(135deg, #06b6d4"] {
+  box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
+  border-radius: 20px;
+}
+
+[style*="linear-gradient(135deg, #ef4444"] {
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+  border-radius: 20px;
+}
+
+[style*="linear-gradient(135deg, #10b981"] {
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+  border-radius: 20px;
+}
+
+/* Dashboard glass cards - solid background */
+main .glass-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.dark main .glass-card {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Page titles */
+main h1 {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+main p {
+  color: var(--text-muted);
+}
+
+/* Links in dashboard */
+main a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+main a:hover {
+  color: var(--primary-light);
+  text-decoration: underline;
 }
 
 /* ============ Auth Page Styles ============ */
@@ -491,20 +629,25 @@ body {
   padding: 12px 16px;
   border-radius: 12px;
   font-weight: 500;
+  font-size: 0.9375rem;
   color: var(--text-secondary);
   transition: all 0.2s ease;
   text-decoration: none;
+  border: 1px solid transparent;
 }
 
 .sidebar-link:hover {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(99, 102, 241, 0.08);
   color: var(--primary);
+  border-color: rgba(99, 102, 241, 0.15);
 }
 
 .sidebar-link.active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.1));
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.08));
   color: var(--primary);
   font-weight: 600;
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }
 
 /* ============ Table Styles ============ */
@@ -642,6 +785,11 @@ h6 {
   border-left: 4px solid var(--primary);
 }
 
+/* ============ Dashboard/Page Layout ============ */
+main {
+  min-height: calc(100vh - 72px);
+}
+
 .medicine-card.active {
   border-left-color: var(--success);
 }
@@ -727,13 +875,18 @@ h6 {
 
 /* ============ Animated Page Background ============ */
 .bg-mesh-animated {
-  background:
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
-  background-size: 200% 200%;
-  animation: mesh-flow 15s ease infinite;
+  background: var(--bg-primary);
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+}
+
+.dark .bg-mesh-animated {
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
 }
 
 @keyframes mesh-flow {

@@ -73,7 +73,7 @@ const DashboardLayout = () => {
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}
-                        className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                        className="lg:hidden p-2 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
                     >
                         <HiOutlineX size={22} className="text-[var(--text-secondary)]" />
                     </button>
@@ -115,7 +115,7 @@ const DashboardLayout = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-bold truncate text-[var(--text-primary)]">
-                                    Dr. {doctor?.fullName || 'Doctor'}
+                                    {doctor?.fullName?.startsWith('Dr.') ? doctor.fullName : `Dr. ${doctor?.fullName || 'Doctor'}`}
                                 </p>
                                 <p className="text-xs font-medium truncate text-[var(--text-muted)]">
                                     {doctor?.specialization || 'General'}
@@ -143,14 +143,14 @@ const DashboardLayout = () => {
                 >
                     <button
                         onClick={() => setSidebarOpen(true)}
-                        className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                        className="lg:hidden p-2 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
                     >
                         <HiOutlineMenu size={24} className="text-[var(--text-primary)]" />
                     </button>
 
                     <div className="hidden lg:block">
                         <h2 className="text-sm font-medium text-[var(--text-muted)]">
-                            Welcome back, <span className="text-[var(--text-primary)] font-semibold">Dr. {doctor?.fullName}</span>
+                            Welcome back, <span className="text-[var(--text-primary)] font-semibold">{doctor?.fullName?.startsWith('Dr.') ? doctor.fullName : `Dr. ${doctor?.fullName || ''}`}</span>
                         </h2>
                     </div>
 
