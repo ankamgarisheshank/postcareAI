@@ -6,11 +6,10 @@ const ProtectedRoute = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+            <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4"
-                        style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
-                    <p style={{ color: 'var(--text-secondary)' }} className="text-lg font-medium">Loading...</p>
+                    <div className="spinner mx-auto mb-4" />
+                    <p className="text-lg font-medium text-secondary">Loading...</p>
                 </div>
             </div>
         );

@@ -24,11 +24,8 @@ const AlertsPage = () => {
     };
 
     const handleResolve = async (alertId) => {
-        try {
-            await resolveAlert(alertId);
-            toast.success('Alert resolved');
-            fetchAlerts();
-        } catch { toast.error('Failed to resolve'); }
+        try { await resolveAlert(alertId); toast.success('Alert resolved'); fetchAlerts(); }
+        catch { toast.error('Failed to resolve'); }
     };
 
     const severityColor = (s) => s === 'High' ? '#ef4444' : s === 'Medium' ? '#f59e0b' : '#06b6d4';
@@ -36,19 +33,15 @@ const AlertsPage = () => {
     return (
         <div className="space-y-6">
             <Toaster position="top-right" />
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-                <div>
-                    <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">🚨 Critical Alerts</h1>
-                    <p className="text-sm font-medium text-[var(--text-muted)] mt-1">Monitor and resolve patient alerts in real-time</p>
-                </div>
+            <div>
+                <h1 className="text-3xl font-extrabold text-primary tracking-tight">🚨 Critical Alerts</h1>
+                <p className="text-sm font-medium text-muted mt-1">Monitor and resolve patient alerts in real-time</p>
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex gap-2 p-1.5 rounded-2xl w-fit bg-[var(--bg-tertiary)] border border-[var(--border)] shadow-inner">
+            <div className="tabs-container" style={{ width: 'fit-content' }}>
                 {['unresolved', 'resolved', 'all'].map(f => (
-                    <button key={f} onClick={() => setFilter(f)}
-                        className={`py-2 px-6 rounded-xl text-sm font-bold capitalize transition-all ${filter === f ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-md shadow-[var(--primary)]/20' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'}`}
-                    >
+                    <button key={f} onClick={() => setFilter(f)} className={`tab-btn ${filter === f ? 'active' : ''}`}>
                         {f}
                     </button>
                 ))}
@@ -56,58 +49,47 @@ const AlertsPage = () => {
 
             {/* Alert List */}
             {loading ? (
-                <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-24 rounded-2xl loading-shimmer" />)}</div>
+                <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="loading-shimmer" style={{ height: 96, borderRadius: 16 }} />)}</div>
             ) : alerts.length === 0 ? (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-16 text-center border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl shadow-lg rounded-3xl">
-                    <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center bg-[var(--bg-tertiary)] border-4 border-[var(--bg-secondary)] shadow-inner">
-                        <HiOutlineExclamation size={48} className="mx-auto text-[var(--text-muted)]" />
-                    </div>
-                    <h3 className="text-2xl font-bold mb-3 text-[var(--text-primary)]">No alerts</h3>
-                    <p className="text-[var(--text-muted)] font-medium max-w-md mx-auto">All clear! No {filter} alerts found at the moment.</p>
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="empty-state">
+                    <div className="empty-state-icon"><HiOutlineExclamation size={48} style={{ color: 'var(--text-muted)' }} /></div>
+                    <h3 className="text-2xl font-bold mb-3 text-primary">No alerts</h3>
+                    <p className="text-muted font-medium" style={{ maxWidth: 400, margin: '0 auto' }}>All clear! No {filter} alerts found at the moment.</p>
                 </motion.div>
             ) : (
                 <div className="space-y-3">
                     {alerts.map((alert, i) => (
-                        <motion.div
-                            key={alert._id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.05, ease: "easeOut" }}
-                            className="glass-card p-6 flex flex-col sm:flex-row sm:items-center gap-5 border border-[var(--border)] bg-[var(--bg-secondary)] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all rounded-3xl relative overflow-hidden group"
-                        >
-                            <div className="absolute left-0 inset-y-0 w-1.5 transition-all group-hover:w-2" style={{ backgroundColor: severityColor(alert.severity) }} />
-                            <div className="flex-1 pl-2">
+                        <motion.div key={alert._id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.05 }} className="card flex gap-5" style={{ padding: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+                            {/* Left color bar */}
+                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, borderRadius: '24px 0 0 24px', backgroundColor: severityColor(alert.severity) }} />
+
+                            <div style={{ flex: 1, paddingLeft: 8 }}>
                                 <div className="flex items-center gap-3 mb-2">
-                                    <span className={`text-[10px] uppercase font-black tracking-wider px-2.5 py-1 rounded-md border ${alert.severity === 'High' ? 'bg-red-500/10 text-red-500 border-red-500/20' : alert.severity === 'Medium' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'}`}>
+                                    <span className={`badge ${alert.severity === 'High' ? 'badge-danger' : alert.severity === 'Medium' ? 'badge-warning' : 'badge-info'}`}>
                                         {alert.severity}
                                     </span>
-                                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-tertiary)] px-2 py-1 rounded border border-[var(--border)]">
+                                    <span className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
                                         {alert.type || 'symptom'}
                                     </span>
                                 </div>
-                                <p className="text-base font-bold text-[var(--text-primary)]">
-                                    {alert.patient?.fullName || 'Unknown Patient'}
-                                </p>
-                                <p className="text-sm mt-1.5 font-medium text-[var(--text-secondary)]">
-                                    {alert.message}
-                                </p>
-                                <p className="text-xs mt-2 font-semibold text-[var(--text-muted)] flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]" />
+                                <p className="text-base font-bold text-primary">{alert.patient?.fullName || 'Unknown Patient'}</p>
+                                <p className="text-sm mt-1 font-medium text-secondary">{alert.message}</p>
+                                <p className="text-xs mt-2 font-semibold text-muted flex items-center gap-1">
+                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', display: 'inline-block' }} />
                                     {new Date(alert.createdAt).toLocaleString()}
                                 </p>
                             </div>
+
                             {!alert.resolved && (
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
+                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                     onClick={() => handleResolve(alert._id)}
-                                    className="px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white shadow-sm hover:shadow-md hover:shadow-emerald-500/20"
-                                >
+                                    className="btn btn-sm" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: 'none', fontWeight: 700 }}>
                                     <HiOutlineCheck size={18} /> Resolve
                                 </motion.button>
                             )}
                             {alert.resolved && (
-                                <span className="text-sm text-emerald-500 font-bold bg-emerald-500/10 px-4 py-2 rounded-xl flex items-center gap-1 border border-emerald-500/20">
+                                <span className="badge badge-success" style={{ padding: '8px 16px', fontSize: '0.8rem' }}>
                                     ✅ Resolved {alert.resolvedAt && new Date(alert.resolvedAt).toLocaleDateString()}
                                 </span>
                             )}

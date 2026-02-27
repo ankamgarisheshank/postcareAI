@@ -12,6 +12,7 @@ import PatientFormPage from './pages/PatientFormPage';
 import PatientDetailPage from './pages/PatientDetailPage';
 import AlertsPage from './pages/AlertsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import PatientMapPage from './pages/PatientMapPage';
 
 import { useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
@@ -45,6 +46,7 @@ function AppContent() {
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/patients" element={<PatientsPage />} />
+              <Route path="/patients/map" element={<PatientMapPage />} />
               <Route path="/patients/add" element={<PatientFormPage />} />
               <Route path="/patients/edit/:id" element={<PatientFormPage />} />
               <Route path="/patients/:id" element={<PatientDetailPage />} />

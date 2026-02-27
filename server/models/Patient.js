@@ -36,6 +36,11 @@ const patientSchema = new mongoose.Schema(
             trim: true,
             default: '',
         },
+        location: {
+            lat: { type: Number },
+            lng: { type: Number },
+            formattedAddress: { type: String }
+        },
         admissionDate: {
             type: Date,
             default: Date.now,
