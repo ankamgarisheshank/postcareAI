@@ -18,6 +18,17 @@ const DailyLog = require('../models/DailyLog');
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://dheeraxgamerz_db_user:WgS7xhmhDdywGRK0@cluster0.efhgprs.mongodb.net/patient-followup';
 
+const geocodeAddress = async (address) => {
+    try {
+        if (!address) return null;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+        const response = await fetch(url, { headers: { 'User-Agent': 'PostCareAI/1.0' } });
+        const data = await response.json();
+        if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), formattedAddress: data[0].display_name };
+    } catch (e) { console.warn('Geocode failed:', e.message); }
+    return null;
+};
+
 const seedUsers = [
     {
         name: 'Dr. Rajesh Kumar',
@@ -114,22 +125,26 @@ async function seed() {
             { name: 'Anita Desai', age: 52, gender: 'Female', phone: '+919123456794', surgeryType: 'Cataract surgery', diagnosis: 'Bilateral cataract', status: 'Active', riskLevel: 'Low', riskStatus: 'stable' },
         ];
 
+        const addresses = ['Hyderabad, Telangana, India', 'Mumbai, Maharashtra, India', 'Bangalore, Karnataka, India', 'Chennai, Tamil Nadu, India', 'Delhi, India', 'Pune, Maharashtra, India'];
         for (let i = 0; i < patientData.length; i++) {
             const data = patientData[i];
             const doctor = users[i % users.length];
+            const address = addresses[i % addresses.length];
+            const location = await geocodeAddress(address);
             const patient = await Patient.create({
                 doctor: doctor._id,
                 assignedDoctor: doctor.name,
                 doctorPhone: doctor.phone || '',
                 ...data,
-                address: (50 + i) + ' Main Street, City',
+                address,
+                location: location || undefined,
                 admissionDate: new Date(Date.now() - (i + 1) * 24 * 60 * 60 * 1000 * 7),
                 surgeryDate: new Date(Date.now() - (i + 1) * 24 * 60 * 60 * 1000 * 5),
                 operationDate: new Date(Date.now() - (i + 1) * 24 * 60 * 60 * 1000 * 5),
                 recoveryScore: data.status === 'Recovered' ? 95 : data.status === 'Critical' ? 45 : 70 + i * 5,
             });
             patients.push(patient);
-            console.log('  + ' + patient.name + ' - ' + patient.surgeryType);
+            console.log('  + ' + patient.name + ' - ' + patient.surgeryType + (location ? ' [mapped]' : ''));
         }
 
         // Link patient user to patient record

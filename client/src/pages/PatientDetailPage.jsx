@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getPatient, uploadPrescription, sendEmergency, deletePatient } from '../services/patientService';
+import { getPatient, uploadPrescription, sendEmergency, deletePatient, createCallSchedule, getCallSchedules, cancelCallSchedule, testCall } from '../services/patientService';
 import { addMedication, bulkAddMedications, deleteMedication } from '../services/patientService';
-import { addRecoveryLog } from '../services/patientService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast, { Toaster } from 'react-hot-toast';
 import {
     HiOutlineUpload, HiOutlinePlus, HiOutlineTrash, HiOutlineExclamation,
     HiOutlinePencil, HiOutlineThumbUp, HiOutlineThumbDown, HiOutlineMinusCircle,
     HiOutlineBeaker, HiOutlineCheckCircle, HiOutlineClock, HiOutlineXCircle,
+    HiOutlinePhone, HiOutlineCalendar,
 } from 'react-icons/hi';
 
 const PatientDetailPage = () => {
@@ -26,6 +26,13 @@ const PatientDetailPage = () => {
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     });
+    const [schedules, setSchedules] = useState([]);
+    const [scheduleForm, setScheduleForm] = useState({
+        scheduledAt: '',
+        message: '',
+    });
+    const [scheduling, setScheduling] = useState(false);
+    const [testCalling, setTestCalling] = useState(false);
 
     useEffect(() => { fetchPatient(); }, [id]);
     const fetchPatient = async () => {
@@ -72,10 +79,62 @@ const PatientDetailPage = () => {
         catch { toast.error('Failed to send emergency'); }
     };
 
+    const fetchSchedules = async () => {
+        try {
+            const { data } = await getCallSchedules({ patientId: id });
+            setSchedules(data.data || []);
+        } catch { }
+    };
+
+    useEffect(() => { if (activeTab === 'schedule') fetchSchedules(); }, [activeTab, id]);
+
+    const handleScheduleCall = async (e) => {
+        e.preventDefault();
+        if (!scheduleForm.scheduledAt || !scheduleForm.message.trim()) {
+            toast.error('Please set date/time and message');
+            return;
+        }
+        setScheduling(true);
+        try {
+            await createCallSchedule({
+                patientId: id,
+                scheduledAt: new Date(scheduleForm.scheduledAt).toISOString(),
+                message: scheduleForm.message.trim(),
+            });
+            toast.success('Call scheduled! VAPI will call the patient at the set time.');
+            setScheduleForm({ scheduledAt: '', message: '' });
+            fetchSchedules();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to schedule');
+        } finally { setScheduling(false); }
+    };
+
+    const handleCancelSchedule = async (scheduleId) => {
+        if (!confirm('Cancel this scheduled call?')) return;
+        try {
+            await cancelCallSchedule(scheduleId);
+            toast.success('Schedule cancelled');
+            fetchSchedules();
+        } catch { toast.error('Failed to cancel'); }
+    };
+
+    const handleTestCall = async () => {
+        if (!patient.phone) { toast.error('Patient has no phone number'); return; }
+        setTestCalling(true);
+        try {
+            const { data } = await testCall(id, 'This is a test call from PostCare AI. Your doctor is verifying the voice assistant works.');
+            toast.success(data.message || 'Call initiated!');
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Test call failed';
+            const hint = err.response?.data?.hint;
+            toast.error(hint ? `${msg} — ${hint}` : msg, { duration: 6000 });
+        } finally { setTestCalling(false); }
+    };
+
     if (loading) return <div className="flex items-center justify-center" style={{ height: 260 }}><div className="spinner" /></div>;
     if (!patient) return null;
 
-    const tabs = ['overview', 'medications', 'nutrition', 'recovery', 'alerts'];
+    const tabs = ['overview', 'medications', 'nutrition', 'recovery', 'alerts', 'schedule'];
     const recoveryData = (patient.recoveryLogs || []).slice(0, 14).reverse().map(l => ({
         date: new Date(l.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }),
         pain: l.painLevel, adherence: l.medicineAdherence ? 100 : 0,
@@ -415,6 +474,87 @@ const PatientDetailPage = () => {
                             ))}
                             {(patient.recoveryLogs || []).length === 0 && (
                                 <p style={{ fontSize: 14, color: 'var(--text-muted)', padding: '32px 0', textAlign: 'center' }}>No recovery logs recorded yet.</p>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'schedule' && (
+                    <div className="space-y-5">
+                        {!patient.phone && (
+                            <div className="card" style={{ borderLeft: '4px solid var(--warning)', background: 'rgba(245,158,11,0.08)' }}>
+                                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>No phone number on file</p>
+                                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>Add the patient's phone number in Edit to schedule voice calls.</p>
+                            </div>
+                        )}
+                        <div className="card">
+                            <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', borderBottom: '1px solid var(--border)', paddingBottom: 10, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <HiOutlinePhone size={20} style={{ color: 'var(--accent)' }} /> Schedule VAPI Voice Call
+                            </h3>
+                            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                                Set a time for the AI assistant (Robin) to call <strong>{patient.fullName || patient.name}</strong> at <strong>{patient.phone}</strong>. The message you enter will be spoken by the assistant (e.g. medication reminder).
+                            </p>
+                            <form onSubmit={handleScheduleCall} className="space-y-4">
+                                <div className="input-group">
+                                    <label><HiOutlineCalendar size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} /> Date & Time</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={scheduleForm.scheduledAt}
+                                        onChange={e => setScheduleForm(f => ({ ...f, scheduledAt: e.target.value }))}
+                                        className="input-field"
+                                        style={{ height: 46 }}
+                                        min={new Date().toISOString().slice(0, 16)}
+                                        required
+                                        disabled={!patient.phone}
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label>Message (spoken by AI)</label>
+                                    <textarea
+                                        value={scheduleForm.message}
+                                        onChange={e => setScheduleForm(f => ({ ...f, message: e.target.value }))}
+                                        placeholder="e.g. Take your diabetes tablet at 8 PM. Remember to have it after dinner."
+                                        className="input-field"
+                                        rows={3}
+                                        style={{ resize: 'vertical' }}
+                                        required
+                                        disabled={!patient.phone}
+                                    />
+                                    <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>This becomes {'{{metadata.message}}'} in your VAPI assistant prompt.</p>
+                                </div>
+                                <div className="flex gap-3" style={{ flexWrap: 'wrap' }}>
+                                    <button type="submit" disabled={scheduling || !patient.phone} className="btn btn-primary btn-pill">
+                                        {scheduling ? <><div className="spinner spinner-sm" style={{ marginRight: 8, display: 'inline-block' }} /> Scheduling...</> : <><HiOutlinePhone size={18} /> Schedule Call</>}
+                                    </button>
+                                    <button type="button" onClick={handleTestCall} disabled={testCalling || !patient.phone} className="btn btn-outline btn-pill">
+                                        {testCalling ? <><div className="spinner spinner-sm" style={{ marginRight: 8, display: 'inline-block' }} /> Calling...</> : <>📞 Test Call Now</>}
+                                    </button>
+                                </div>
+                            </form>
+                            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12 }}>Test Call — immediately rings the patient. Use it to verify VAPI is configured correctly.</p>
+                        </div>
+                        <div className="card">
+                            <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', borderBottom: '1px solid var(--border)', paddingBottom: 10, marginBottom: 16 }}>Upcoming & Past Calls</h3>
+                            {schedules.length === 0 ? (
+                                <p style={{ fontSize: 14, color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>No scheduled calls yet.</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {schedules.map(s => (
+                                        <div key={s._id} className="flex items-center justify-between p-3" style={{ background: 'var(--bg)', borderRadius: 12, border: '1px solid var(--border-light)' }}>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{new Date(s.scheduledAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                                                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{s.message}</p>
+                                                <span className={`badge ${s.status === 'pending' ? 'badge-warning' : s.status === 'completed' ? 'badge-success' : s.status === 'failed' ? 'badge-danger' : 'badge-neutral'}`} style={{ marginTop: 6 }}>{s.status}</span>
+                                                {s.status === 'failed' && s.errorMessage && (
+                                                    <p style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6, fontWeight: 500 }}>Why: {s.errorMessage}</p>
+                                                )}
+                                            </div>
+                                            {s.status === 'pending' && (
+                                                <button onClick={() => handleCancelSchedule(s._id)} className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)', flexShrink: 0 }}>Cancel</button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </div>

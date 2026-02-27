@@ -3,6 +3,8 @@ const Prescription = require('../models/Prescription');
 const Patient = require('../models/Patient');
 const Alert = require('../models/Alert');
 const Message = require('../models/Message');
+const CallSchedule = require('../models/CallSchedule');
+const { createOutboundCall } = require('./vapiService');
 
 /* ------------------------------------------------------------------ */
 /*  OpenClaw WhatsApp helper (same as messageController)               */
@@ -87,6 +89,9 @@ const initScheduler = () => {
 
     // Daily follow-up check-in - 10:00 AM
     cron.schedule('0 10 * * *', () => sendDailyFollowUps());
+
+    // VAPI scheduled calls - every minute
+    cron.schedule('* * * * *', () => processScheduledCalls());
 
     console.log('✅ Medication scheduler initialized successfully');
 };
@@ -335,6 +340,58 @@ const sendDailyFollowUps = async () => {
         }
     } catch (error) {
         console.error('Follow-up scheduler error:', error.message);
+    }
+};
+
+/* ------------------------------------------------------------------ */
+/*  VAPI scheduled calls — process due call schedules                   */
+/* ------------------------------------------------------------------ */
+const processScheduledCalls = async () => {
+    try {
+        const now = new Date();
+        const dueSchedules = await CallSchedule.find({
+            status: 'pending',
+            scheduledAt: { $lte: now },
+        })
+            .populate('patientId', 'name phone')
+            .limit(10);
+
+        if (dueSchedules.length === 0) return;
+
+        console.log(`📞 Processing ${dueSchedules.length} scheduled VAPI call(s)...`);
+
+        for (const schedule of dueSchedules) {
+            const patient = schedule.patientId;
+            if (!patient || !patient.phone) {
+                schedule.status = 'failed';
+                schedule.errorMessage = 'Patient or phone missing';
+                await schedule.save();
+                continue;
+            }
+
+            try {
+                const result = await createOutboundCall(
+                    patient.phone,
+                    patient.name || patient.fullName,
+                    schedule.message
+                );
+
+                if (result.success) {
+                    schedule.status = 'completed';
+                    schedule.vapiCallId = result.callId;
+                    schedule.completedAt = new Date();
+                } else {
+                    schedule.status = 'failed';
+                    schedule.errorMessage = result.error || 'Unknown error';
+                }
+            } catch (err) {
+                schedule.status = 'failed';
+                schedule.errorMessage = err.message;
+            }
+            await schedule.save();
+        }
+    } catch (error) {
+        console.error('Scheduled calls error:', error.message);
     }
 };
 

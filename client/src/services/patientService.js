@@ -34,3 +34,9 @@ export const getDashboardStats = () => api.get('/dashboard/stats');
 // ===== Nutrition APIs =====
 export const getNutritionSchedule = (patientId) => api.get(`/nutrition/${patientId}`);
 export const setNutritionSchedule = (patientId, data) => api.post(`/nutrition/${patientId}`, data);
+
+// ===== Schedule (VAPI Call) APIs =====
+export const createCallSchedule = (data) => api.post('/schedule', data);
+export const getCallSchedules = (params) => api.get('/schedule', { params });
+export const cancelCallSchedule = (id) => api.put(`/schedule/${id}/cancel`);
+export const testCall = (patientId, message) => api.post('/schedule/test-call', { patientId, message });
