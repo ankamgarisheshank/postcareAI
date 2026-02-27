@@ -7,6 +7,27 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { parsePrescription } = require('../services/geminiService');
 const { sendWhatsAppMessage } = require('../services/twilioService');
 
+const geocodeAddress = async (address) => {
+    try {
+        if (!address) return null;
+        // User-Agent is required by Nominatim usage policy
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+        const response = await fetch(url, { headers: { 'User-Agent': 'PostCareAI/1.0' } });
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+            return {
+                lat: parseFloat(data[0].lat),
+                lng: parseFloat(data[0].lon),
+                formattedAddress: data[0].display_name
+            };
+        }
+    } catch (error) {
+        console.error('Geocoding error:', error.message);
+    }
+    return null;
+};
+
 /**
  * @desc    Create a new patient
  * @route   POST /api/patients
@@ -17,6 +38,11 @@ const createPatient = asyncHandler(async (req, res) => {
         ...req.body,
         doctor: req.doctor._id,
     };
+
+    if (patientData.address) {
+        const location = await geocodeAddress(patientData.address);
+        if (location) patientData.location = location;
+    }
 
     const patient = await Patient.create(patientData);
 
@@ -117,7 +143,15 @@ const updatePatient = asyncHandler(async (req, res) => {
         throw new Error('Patient not found');
     }
 
-    patient = await Patient.findByIdAndUpdate(req.params.id, req.body, {
+    const updateData = { ...req.body };
+
+    // Update coordinates if address changed
+    if (updateData.address && updateData.address !== patient.address) {
+        const location = await geocodeAddress(updateData.address);
+        if (location) updateData.location = location;
+    }
+
+    patient = await Patient.findByIdAndUpdate(req.params.id, updateData, {
         new: true,
         runValidators: true,
     });
