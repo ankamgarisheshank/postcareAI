@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { HiOutlineHeart, HiOutlineTrendingUp, HiOutlineCalendar, HiOutlineBell, HiOutlineLocationMarker } from 'react-icons/hi';
+import { HiOutlineHeart, HiOutlineTrendingUp, HiOutlineCalendar, HiOutlineBell, HiOutlineLocationMarker, HiOutlineThumbUp, HiOutlineThumbDown, HiOutlineMinusCircle, HiOutlineBeaker } from 'react-icons/hi';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
@@ -107,7 +107,7 @@ const MyRecoveryPage = () => {
 
     const moodIcon = (m) => {
         const mood = (m || '').toLowerCase();
-        return mood === 'good' ? '😊' : mood === 'bad' || mood === 'critical' ? '😫' : '😐';
+        return mood === 'good' ? <HiOutlineThumbUp /> : mood === 'bad' || mood === 'critical' ? <HiOutlineThumbDown /> : <HiOutlineMinusCircle />;
     };
     const moodBadge = (m) => {
         const mood = (m || '').toLowerCase();
@@ -209,7 +209,7 @@ const MyRecoveryPage = () => {
                             <p className="text-center py-8 text-muted font-medium">No medications prescribed yet.</p>
                         ) : medications.map((med) => (
                             <div key={med._id} className="flex items-center gap-3 p-3" style={{ background: 'var(--bg-tertiary)', borderRadius: 12, border: '1px solid var(--border)' }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>💊</div>
+                                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', color: 'var(--success)', flexShrink: 0 }}><HiOutlineBeaker /></div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <p className="font-bold text-sm text-primary truncate">{med.drugName || med.medicineName}</p>
                                     <p className="text-xs text-muted">{med.dosage} &bull; {med.frequency || 'Daily'}</p>
