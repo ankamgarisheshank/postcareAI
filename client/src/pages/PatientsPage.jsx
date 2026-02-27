@@ -5,7 +5,7 @@ import { getPatients, deletePatient } from '../services/patientService';
 import toast, { Toaster } from 'react-hot-toast';
 import {
     HiOutlineSearch, HiOutlinePlus, HiOutlineTrash, HiOutlineEye,
-    HiOutlinePencil, HiOutlineFilter,
+    HiOutlinePencil, HiOutlineFilter, HiOutlineViewGrid, HiOutlineViewList,
 } from 'react-icons/hi';
 
 const PatientsPage = () => {
@@ -14,15 +14,16 @@ const PatientsPage = () => {
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
+    const [viewMode, setViewMode] = useState('table'); // 'cards' or 'table' - table shows all data
 
     useEffect(() => {
         fetchPatients();
-    }, [search, statusFilter, pagination.page]);
+    }, [search, statusFilter, pagination.page, viewMode]);
 
     const fetchPatients = async () => {
         try {
             setLoading(true);
-            const params = { page: pagination.page, limit: 12 };
+            const params = { page: pagination.page, limit: viewMode === 'table' ? 25 : 12 };
             if (search) params.search = search;
             if (statusFilter) params.status = statusFilter;
 
@@ -113,6 +114,24 @@ const PatientsPage = () => {
                             <option value="Recovered">Recovered</option>
                         </select>
                     </div>
+                    <div className="flex gap-1">
+                        <button
+                            onClick={() => setViewMode('table')}
+                            className={`p-2.5 rounded-xl transition-colors ${viewMode === 'table' ? 'gradient-primary text-white' : ''}`}
+                            style={viewMode !== 'table' ? { background: 'var(--bg-tertiary)', color: 'var(--text-muted)' } : {}}
+                            title="Table view - all data"
+                        >
+                            <HiOutlineViewList size={20} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('cards')}
+                            className={`p-2.5 rounded-xl transition-colors ${viewMode === 'cards' ? 'gradient-primary text-white' : ''}`}
+                            style={viewMode !== 'cards' ? { background: 'var(--bg-tertiary)', color: 'var(--text-muted)' } : {}}
+                            title="Card view"
+                        >
+                            <HiOutlineViewGrid size={20} />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -123,6 +142,67 @@ const PatientsPage = () => {
                         <div key={i} className="h-48 rounded-2xl loading-shimmer" />
                     ))}
                 </div>
+            ) : viewMode === 'table' && patients.length > 0 ? (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="glass-card overflow-x-auto"
+                >
+                    <table className="w-full min-w-[900px]" style={{ color: 'var(--text-primary)' }}>
+                        <thead>
+                            <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Patient</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Age / Gender</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Phone</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Address</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Admission</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Discharge</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Operation</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Surgery</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Diagnosis</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Treatment</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Status</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Risk</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Recovery</th>
+                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {patients.map((patient) => (
+                                <tr key={patient._id} className="table-row border-b" style={{ borderColor: 'var(--border)' }}>
+                                    <td className="py-3 px-4">
+                                        <Link to={`/patients/${patient._id}`} className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>
+                                            {patient.fullName}
+                                        </Link>
+                                    </td>
+                                    <td className="py-3 px-4 text-sm">{patient.age} / {patient.gender}</td>
+                                    <td className="py-3 px-4 text-sm">{patient.phone || 'N/A'}</td>
+                                    <td className="py-3 px-4 text-sm max-w-[180px] truncate" title={patient.address}>{patient.address || 'N/A'}</td>
+                                    <td className="py-3 px-4 text-sm">{patient.admissionDate ? new Date(patient.admissionDate).toLocaleDateString() : 'N/A'}</td>
+                                    <td className="py-3 px-4 text-sm">{patient.dischargeDate ? new Date(patient.dischargeDate).toLocaleDateString() : 'N/A'}</td>
+                                    <td className="py-3 px-4 text-sm">{patient.operationDate ? new Date(patient.operationDate).toLocaleDateString() : 'N/A'}</td>
+                                    <td className="py-3 px-4 text-sm">{patient.surgeryType || 'N/A'}</td>
+                                    <td className="py-3 px-4 text-sm max-w-[150px] truncate" title={patient.diagnosis}>{patient.diagnosis || 'N/A'}</td>
+                                    <td className="py-3 px-4 text-sm max-w-[150px] truncate" title={patient.treatmentSummary}>{patient.treatmentSummary || 'N/A'}</td>
+                                    <td className="py-3 px-4"><span className={`badge ${getStatusBadge(patient.status)}`}>{patient.status}</span></td>
+                                    <td className="py-3 px-4"><span className={`badge ${getRiskBadge(patient.riskLevel)}`}>{patient.riskLevel}</span></td>
+                                    <td className="py-3 px-4 text-sm font-medium" style={{ color: 'var(--primary)' }}>{patient.recoveryScore || 0}%</td>
+                                    <td className="py-3 px-4">
+                                        <div className="flex gap-1">
+                                            <Link to={`/patients/${patient._id}`}>
+                                                <button className="p-1.5 rounded-lg" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }} title="View"><HiOutlineEye size={16} /></button>
+                                            </Link>
+                                            <Link to={`/patients/edit/${patient._id}`}>
+                                                <button className="p-1.5 rounded-lg" style={{ background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4' }} title="Edit"><HiOutlinePencil size={16} /></button>
+                                            </Link>
+                                            <button onClick={() => handleDelete(patient._id, patient.fullName)} className="p-1.5 rounded-lg" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }} title="Delete"><HiOutlineTrash size={16} /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </motion.div>
             ) : patients.length === 0 ? (
                 <motion.div
                     initial={{ opacity: 0 }}

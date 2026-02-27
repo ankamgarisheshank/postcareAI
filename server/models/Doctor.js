@@ -31,8 +31,10 @@ const doctorSchema = new mongoose.Schema(
         },
         phone: {
             type: String,
+            required: [true, 'Phone number is required'],
             trim: true,
         },
+
         hospital: {
             type: String,
             trim: true,

@@ -17,8 +17,9 @@ const registerSchema = z.object({
     password: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string(),
     specialization: z.string().optional(),
-    phone: z.string().optional(),
-    hospital: z.string().optional(),
+    phone: z.string().min(10, 'Valid phone number is required'),
+    hospital: z.string().min(2, 'Hospital name is required'),
+
 }).refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],

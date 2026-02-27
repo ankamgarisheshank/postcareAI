@@ -74,7 +74,8 @@ const getPatient = asyncHandler(async (req, res) => {
     const patient = await Patient.findOne({
         _id: req.params.id,
         doctor: req.doctor._id,
-    });
+    }).populate('doctor', 'fullName phone specialization hospital');
+
 
     if (!patient) {
         res.status(404);
