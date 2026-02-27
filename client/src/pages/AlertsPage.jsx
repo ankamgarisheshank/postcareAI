@@ -36,19 +36,19 @@ const AlertsPage = () => {
     return (
         <div className="space-y-6">
             <Toaster position="top-right" />
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                 <div>
-                    <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>🚨 Alerts</h1>
-                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Monitor patient alerts in real-time</p>
+                    <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">🚨 Critical Alerts</h1>
+                    <p className="text-sm font-medium text-[var(--text-muted)] mt-1">Monitor and resolve patient alerts in real-time</p>
                 </div>
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-tertiary)' }}>
+            <div className="flex gap-2 p-1.5 rounded-2xl w-fit bg-[var(--bg-tertiary)] border border-[var(--border)] shadow-inner">
                 {['unresolved', 'resolved', 'all'].map(f => (
                     <button key={f} onClick={() => setFilter(f)}
-                        className={`py-2 px-5 rounded-lg text-sm font-medium capitalize transition-all ${filter === f ? 'gradient-primary text-white' : ''}`}
-                        style={filter !== f ? { color: 'var(--text-muted)' } : {}}>
+                        className={`py-2 px-6 rounded-xl text-sm font-bold capitalize transition-all ${filter === f ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-md shadow-[var(--primary)]/20' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'}`}
+                    >
                         {f}
                     </button>
                 ))}
@@ -58,10 +58,12 @@ const AlertsPage = () => {
             {loading ? (
                 <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-24 rounded-2xl loading-shimmer" />)}</div>
             ) : alerts.length === 0 ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card p-12 text-center">
-                    <HiOutlineExclamation size={48} className="mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-                    <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No alerts</h3>
-                    <p style={{ color: 'var(--text-muted)' }}>All clear! No {filter} alerts found.</p>
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-16 text-center border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl shadow-lg rounded-3xl">
+                    <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center bg-[var(--bg-tertiary)] border-4 border-[var(--bg-secondary)] shadow-inner">
+                        <HiOutlineExclamation size={48} className="mx-auto text-[var(--text-muted)]" />
+                    </div>
+                    <h3 className="text-2xl font-bold mb-3 text-[var(--text-primary)]">No alerts</h3>
+                    <p className="text-[var(--text-muted)] font-medium max-w-md mx-auto">All clear! No {filter} alerts found at the moment.</p>
                 </motion.div>
             ) : (
                 <div className="space-y-3">
@@ -70,26 +72,27 @@ const AlertsPage = () => {
                             key={alert._id}
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.05 }}
-                            className="glass-card p-5 flex flex-col sm:flex-row sm:items-center gap-4"
-                            style={{ borderLeft: `4px solid ${severityColor(alert.severity)}` }}
+                            transition={{ delay: i * 0.05, ease: "easeOut" }}
+                            className="glass-card p-6 flex flex-col sm:flex-row sm:items-center gap-5 border border-[var(--border)] bg-[var(--bg-secondary)] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all rounded-3xl relative overflow-hidden group"
                         >
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className={`badge ${alert.severity === 'High' ? 'badge-danger' : alert.severity === 'Medium' ? 'badge-warning' : 'badge-info'}`}>
+                            <div className="absolute left-0 inset-y-0 w-1.5 transition-all group-hover:w-2" style={{ backgroundColor: severityColor(alert.severity) }} />
+                            <div className="flex-1 pl-2">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <span className={`text-[10px] uppercase font-black tracking-wider px-2.5 py-1 rounded-md border ${alert.severity === 'High' ? 'bg-red-500/10 text-red-500 border-red-500/20' : alert.severity === 'Medium' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'}`}>
                                         {alert.severity}
                                     </span>
-                                    <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-tertiary)] px-2 py-1 rounded border border-[var(--border)]">
                                         {alert.type || 'symptom'}
                                     </span>
                                 </div>
-                                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                                <p className="text-base font-bold text-[var(--text-primary)]">
                                     {alert.patient?.fullName || 'Unknown Patient'}
                                 </p>
-                                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                                <p className="text-sm mt-1.5 font-medium text-[var(--text-secondary)]">
                                     {alert.message}
                                 </p>
-                                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                                <p className="text-xs mt-2 font-semibold text-[var(--text-muted)] flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]" />
                                     {new Date(alert.createdAt).toLocaleString()}
                                 </p>
                             </div>
@@ -98,13 +101,13 @@ const AlertsPage = () => {
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => handleResolve(alert._id)}
-                                    className="btn-3d btn-3d-success px-4 py-2 text-sm flex items-center gap-1.5"
+                                    className="px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white shadow-sm hover:shadow-md hover:shadow-emerald-500/20"
                                 >
-                                    <HiOutlineCheck size={16} /> Resolve
+                                    <HiOutlineCheck size={18} /> Resolve
                                 </motion.button>
                             )}
                             {alert.resolved && (
-                                <span className="text-xs text-green-500 font-medium">
+                                <span className="text-sm text-emerald-500 font-bold bg-emerald-500/10 px-4 py-2 rounded-xl flex items-center gap-1 border border-emerald-500/20">
                                     ✅ Resolved {alert.resolvedAt && new Date(alert.resolvedAt).toLocaleDateString()}
                                 </span>
                             )}

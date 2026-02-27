@@ -98,12 +98,12 @@ const DashboardPage = () => {
     return (
         <div className="space-y-6">
             {/* Page Title */}
-            <div>
-                <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                    Dashboard
+            <div className="flex flex-col gap-1 mb-8">
+                <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                    Dashboard Overview
                 </h1>
-                <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                    Overview of your patient management
+                <p className="text-sm font-medium text-[var(--text-muted)]">
+                    Real-time monitoring and analytics of your active patients
                 </p>
             </div>
 
@@ -112,27 +112,33 @@ const DashboardPage = () => {
                 variants={container}
                 initial="hidden"
                 animate="show"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
             >
                 {statCards.map((card) => (
                     <motion.div
                         key={card.key}
                         variants={item}
-                        className={`stat-card ${card.glowClass} cursor-pointer`}
+                        className={`relative overflow-hidden cursor-pointer rounded-2xl shadow-xl shadow-[color-mix(in_srgb,_${card.gradient}_20%,_transparent)] transition-all hover:scale-[1.03] hover:-translate-y-1 hover:shadow-2xl`}
                         style={{ background: card.gradient }}
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.98 }}
                     >
-                        <div className="relative z-10">
-                            <div className="flex items-center justify-between mb-3">
-                                <card.icon size={28} className="text-white/80" />
-                                <HiOutlineTrendingUp size={16} className="text-white/60" />
+                        <div className="relative z-10 p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-md">
+                                    <card.icon size={28} className="text-white" />
+                                </div>
+                                <div className="flex items-center gap-1 text-white/80 bg-black/10 px-2 py-1 rounded-full text-xs font-semibold backdrop-blur-sm border border-white/10">
+                                    <HiOutlineTrendingUp size={14} />
+                                    <span>+12%</span>
+                                </div>
                             </div>
-                            <p className="text-3xl font-bold text-white">
-                                {stats[card.key] ?? 0}
-                            </p>
-                            <p className="text-sm text-white/70 mt-1 font-medium">{card.label}</p>
+                            <div className="mt-2 text-white">
+                                <p className="text-4xl font-black tabular-nums tracking-tight">
+                                    {stats[card.key] ?? 0}
+                                </p>
+                                <p className="text-sm font-medium text-white/80 mt-1 uppercase tracking-wider">{card.label}</p>
+                            </div>
                         </div>
+                        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
                     </motion.div>
                 ))}
             </motion.div>
@@ -144,13 +150,16 @@ const DashboardPage = () => {
                     variants={item}
                     initial="hidden"
                     animate="show"
-                    className="glass-card p-6"
+                    className="glass-card p-6 border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl shadow-lg shadow-black/5 rounded-3xl"
                 >
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            Recovery Analytics
-                        </h3>
-                        <span className="badge badge-primary">Last 7 days</span>
+                        <div>
+                            <h3 className="text-xl font-bold text-[var(--text-primary)]">
+                                Recovery Analytics
+                            </h3>
+                            <p className="text-xs text-[var(--text-muted)] mt-1 font-medium">Pain tracking vs Adherence</p>
+                        </div>
+                        <span className="bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-bold px-3 py-1.5 rounded-full border border-[var(--primary)]/20">Last 7 days</span>
                     </div>
                     <ResponsiveContainer width="100%" height={280}>
                         <AreaChart data={recoveryTrend}>
@@ -186,12 +195,15 @@ const DashboardPage = () => {
                     variants={item}
                     initial="hidden"
                     animate="show"
-                    className="glass-card p-6"
+                    className="glass-card p-6 border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl shadow-lg shadow-black/5 rounded-3xl"
                 >
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            Patient Status
-                        </h3>
+                        <div>
+                            <h3 className="text-xl font-bold text-[var(--text-primary)]">
+                                Patient Status Distribution
+                            </h3>
+                            <p className="text-xs text-[var(--text-muted)] mt-1 font-medium">Overview of current recovery phases</p>
+                        </div>
                     </div>
                     <ResponsiveContainer width="100%" height={280}>
                         <BarChart
@@ -224,39 +236,46 @@ const DashboardPage = () => {
                     variants={item}
                     initial="hidden"
                     animate="show"
-                    className="glass-card p-6"
+                    className="glass-card p-6 border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl shadow-lg shadow-black/5 rounded-3xl flex flex-col"
                 >
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            🚨 Recent Alerts
-                        </h3>
-                        <Link to="/alerts" className="text-sm font-medium flex items-center gap-1" style={{ color: 'var(--primary)' }}>
-                            View All <HiOutlineArrowRight size={14} />
+                    <div className="flex items-center justify-between mb-6 border-b border-[var(--border)] pb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-red-500/10 rounded-lg">
+                                <HiOutlineExclamation className="text-red-500" size={20} />
+                            </div>
+                            <h3 className="text-xl font-bold text-[var(--text-primary)]">
+                                Critical Alerts
+                            </h3>
+                        </div>
+                        <Link to="/alerts" className="text-sm font-semibold flex items-center gap-1 text-[var(--primary)] hover:text-[var(--primary-light)] transition-colors">
+                            View All <HiOutlineArrowRight size={16} />
                         </Link>
                     </div>
-                    <div className="space-y-3">
+                    <div className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
                         {(dashData?.recentAlerts || []).length === 0 ? (
-                            <p className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
-                                No active alerts 🎉
-                            </p>
+                            <div className="h-full flex flex-col items-center justify-center py-8">
+                                <span className="text-4xl mb-3">🎉</span>
+                                <p className="text-[var(--text-muted)] font-medium text-center">
+                                    All clear! No pending critical alerts.
+                                </p>
+                            </div>
                         ) : (
                             dashData.recentAlerts.map((alert) => (
                                 <div
                                     key={alert._id}
-                                    className="flex items-start gap-3 p-3 rounded-xl transition-colors"
-                                    style={{ background: 'var(--bg-tertiary)' }}
+                                    className="flex items-start gap-4 p-4 rounded-2xl transition-all border border-[var(--border)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] hover:shadow-md hover:-translate-y-0.5"
                                 >
-                                    <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${alert.severity === 'High' ? 'bg-red-500' : alert.severity === 'Medium' ? 'bg-yellow-500' : 'bg-blue-500'
+                                    <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 border-2 border-[var(--bg-secondary)] shadow-sm ${alert.severity === 'High' ? 'bg-red-500 shadow-red-500/50' : alert.severity === 'Medium' ? 'bg-yellow-500 shadow-yellow-500/50' : 'bg-blue-500 shadow-blue-500/50'
                                         }`} />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                        <p className="text-sm font-bold truncate text-[var(--text-primary)]">
                                             {alert.patient?.fullName || 'Unknown Patient'}
                                         </p>
-                                        <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                                        <p className="text-xs text-[var(--text-muted)] mt-0.5 line-clamp-2">
                                             {alert.message}
                                         </p>
                                     </div>
-                                    <span className={`badge ${alert.severity === 'High' ? 'badge-danger' : alert.severity === 'Medium' ? 'badge-warning' : 'badge-info'
+                                    <span className={`text-[10px] uppercase font-black tracking-wider px-2.5 py-1 rounded-md border ${alert.severity === 'High' ? 'bg-red-500/10 text-red-500 border-red-500/20' : alert.severity === 'Medium' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
                                         }`}>
                                         {alert.severity}
                                     </span>
@@ -271,45 +290,49 @@ const DashboardPage = () => {
                     variants={item}
                     initial="hidden"
                     animate="show"
-                    className="glass-card p-6"
+                    className="glass-card p-6 border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl shadow-lg shadow-black/5 rounded-3xl flex flex-col"
                 >
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            Recent Patients
-                        </h3>
-                        <Link to="/patients" className="text-sm font-medium flex items-center gap-1" style={{ color: 'var(--primary)' }}>
-                            View All <HiOutlineArrowRight size={14} />
+                    <div className="flex items-center justify-between mb-6 border-b border-[var(--border)] pb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-[var(--primary)]/10 rounded-lg">
+                                <HiOutlineUsers className="text-[var(--primary)]" size={20} />
+                            </div>
+                            <h3 className="text-xl font-bold text-[var(--text-primary)]">
+                                Newly Added Patients
+                            </h3>
+                        </div>
+                        <Link to="/patients" className="text-sm font-semibold flex items-center gap-1 text-[var(--primary)] hover:text-[var(--primary-light)] transition-colors">
+                            View Directory <HiOutlineArrowRight size={16} />
                         </Link>
                     </div>
-                    <div className="space-y-3">
+                    <div className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
                         {(dashData?.recentPatients || []).length === 0 ? (
-                            <p className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
-                                No patients yet. <Link to="/patients/add" style={{ color: 'var(--primary)' }}>Add one</Link>
+                            <p className="text-center py-8 text-[var(--text-muted)] font-medium">
+                                No patients added yet. <Link to="/patients/add" className="text-[var(--primary)] hover:underline ml-1">Add your first patient</Link>
                             </p>
                         ) : (
                             dashData.recentPatients.map((patient) => (
                                 <Link
                                     key={patient._id}
                                     to={`/patients/${patient._id}`}
-                                    className="flex items-center gap-3 p-3 rounded-xl transition-colors table-row block"
-                                    style={{ background: 'var(--bg-tertiary)' }}
+                                    className="flex items-center gap-4 p-4 rounded-2xl transition-all border border-[var(--border)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] hover:shadow-md hover:-translate-y-0.5 group"
                                 >
-                                    <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
-                                        <span className="text-white text-sm font-semibold">
+                                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] flex items-center justify-center flex-shrink-0 shadow-inner group-hover:shadow-[var(--primary)]/30 transition-shadow">
+                                        <span className="text-white text-base font-bold">
                                             {patient.fullName?.charAt(0) || '?'}
                                         </span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                                        <p className="text-sm font-bold truncate text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">
                                             {patient.fullName}
                                         </p>
-                                        <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-                                            {patient.diagnosis || 'No diagnosis'}
+                                        <p className="text-xs truncate text-[var(--text-muted)] font-medium mt-0.5">
+                                            {patient.diagnosis || 'No diagnosis recorded'}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`badge ${patient.status === 'Active' ? 'badge-success' : patient.status === 'Critical' ? 'badge-danger' :
-                                                patient.status === 'Recovered' ? 'badge-info' : 'badge-warning'
+                                    <div className="flex items-center">
+                                        <span className={`text-[10px] uppercase font-black tracking-wider px-2.5 py-1 rounded-md border ${patient.status === 'Active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : patient.status === 'Critical' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                                            patient.status === 'Recovered' ? 'bg-sky-500/10 text-sky-500 border-sky-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
                                             }`}>
                                             {patient.status}
                                         </span>

@@ -23,7 +23,7 @@ const seedDoctors = [
   {
     fullName: 'Dr. Rajesh Kumar',
     email: 'rajesh.kumar@hospital.com',
-    password: 'Doctor123!',
+    password: '123456',
     specialization: 'Cardiology',
     phone: '+91 9876543210',
     hospital: 'Apollo Hospital',
@@ -32,7 +32,7 @@ const seedDoctors = [
   {
     fullName: 'Dr. Priya Sharma',
     email: 'priya.sharma@hospital.com',
-    password: 'Doctor123!',
+    password: '123456',
     specialization: 'Orthopedics',
     phone: '+91 9876543211',
     hospital: 'Fortis Hospital',
@@ -41,7 +41,7 @@ const seedDoctors = [
   {
     fullName: 'Dr. Amit Patel',
     email: 'amit.patel@hospital.com',
-    password: 'Doctor123!',
+    password: '123456',
     specialization: 'General Surgery',
     phone: '+91 9876543212',
     hospital: 'Max Healthcare',
@@ -50,7 +50,7 @@ const seedDoctors = [
   {
     fullName: 'Admin User',
     email: 'admin@postcareai.com',
-    password: 'Admin123!',
+    password: '123456',
     specialization: 'Administration',
     hospital: 'PostCare AI',
     role: 'admin',
@@ -222,7 +222,7 @@ async function seed() {
     console.log(`   Alerts:     ${await Alert.countDocuments()}`);
     console.log(`   Nutrition:  ${await NutritionSchedule.countDocuments()}`);
     console.log(`   Recovery:   ${await RecoveryLog.countDocuments()}`);
-    console.log('\n📧 Login credentials (password: Doctor123! for doctors, Admin123! for admin):');
+    console.log('\n📧 Login credentials (password: 123456 for all roles):');
     seedDoctors.forEach((d) => console.log(`   ${d.email}`));
     console.log('\n');
 

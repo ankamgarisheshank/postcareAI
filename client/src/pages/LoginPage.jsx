@@ -54,18 +54,19 @@ const LoginPage = () => {
             >
                 {/* Logo */}
                 <motion.div
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2, duration: 0.4 }}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.5, type: 'spring' }}
                     className="text-center mb-8"
                 >
-                    <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 neon-glow">
-                        <span className="text-white font-bold text-2xl">P</span>
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-[var(--primary)]/30 border border-white/10 ring-4 ring-[var(--primary)]/20 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-white/20 blur-xl group-hover:bg-white/30 transition-colors" />
+                        <span className="text-white font-black text-4xl relative z-10 drop-shadow-lg">P</span>
                     </div>
-                    <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                    <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight mb-2">
                         PostCare AI
                     </h1>
-                    <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-sm font-medium text-[var(--text-muted)] bg-[var(--bg-secondary)]/50 inline-block px-4 py-1.5 rounded-full border border-[var(--border)]">
                         Autonomous Patient Follow-up Agent
                     </p>
                 </motion.div>
@@ -75,73 +76,76 @@ const LoginPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="glass-card p-8"
+                    className="glass-card p-8 sm:p-10 border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl shadow-2xl rounded-3xl relative overflow-hidden"
                 >
-                    <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]" />
+                    <h2 className="text-2xl font-bold mb-2 text-[var(--text-primary)] tracking-tight">
                         Welcome Back
                     </h2>
-                    <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-                        Sign in to your doctor account
+                    <p className="text-sm mb-8 text-[var(--text-muted)] font-medium">
+                        Sign in to your doctor account to manage patients
                     </p>
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         {/* Email */}
                         <div className="input-group">
-                            <label className="block text-sm font-medium mb-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
+                            <label className="block text-sm font-semibold mb-2 text-[var(--text-secondary)]">
                                 Email Address
                             </label>
                             <div className="relative group">
                                 <HiOutlineMail
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-primary"
-                                    size={18}
-                                    style={{ color: 'var(--text-muted)' }}
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors"
+                                    size={20}
                                 />
                                 <input
                                     {...register('email')}
                                     type="email"
                                     placeholder="doctor@hospital.com"
-                                    className="input-glow pl-11 hover-glow"
+                                    className="input-glow pl-12 h-12 w-full bg-[var(--bg-secondary)] border-[var(--border)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 rounded-xl shadow-sm transition-all text-base"
                                 />
                             </div>
                             {errors.email && (
-                                <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>
+                                <p className="text-red-500 font-medium text-xs mt-1.5 ml-1 flex items-center gap-1">
+                                    <span className="w-1 h-1 rounded-full bg-red-500" /> {errors.email.message}
+                                </p>
                             )}
                         </div>
 
-
                         {/* Password */}
                         <div className="input-group">
-                            <label className="block text-sm font-medium mb-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
-                                Password
+                            <label className="block text-sm font-semibold mb-2 text-[var(--text-secondary)] flex justify-between">
+                                <span>Password</span>
+                                <a href="#" className="text-xs text-[var(--primary)] hover:underline font-medium">Forgot?</a>
                             </label>
                             <div className="relative group">
                                 <HiOutlineLockClosed
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-primary"
-                                    size={18}
-                                    style={{ color: 'var(--text-muted)' }}
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors"
+                                    size={20}
                                 />
                                 <input
                                     {...register('password')}
                                     type={showPassword ? 'text' : 'password'}
                                     autoComplete="current-password"
-                                    placeholder="Enter your password"
-                                    className="input-glow pl-11 pr-11 hover-glow"
+                                    placeholder="••••••••"
+                                    className="input-glow pl-12 pr-12 h-12 w-full bg-[var(--bg-secondary)] border-[var(--border)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 rounded-xl shadow-sm transition-all text-base font-medium tracking-wide placeholder:tracking-normal"
                                 />
 
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded-md"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                 >
                                     {showPassword ? (
-                                        <HiOutlineEyeOff size={18} style={{ color: 'var(--text-muted)' }} />
+                                        <HiOutlineEyeOff size={20} />
                                     ) : (
-                                        <HiOutlineEye size={18} style={{ color: 'var(--text-muted)' }} />
+                                        <HiOutlineEye size={20} />
                                     )}
                                 </button>
                             </div>
                             {errors.password && (
-                                <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>
+                                <p className="text-red-500 font-medium text-xs mt-1.5 ml-1 flex items-center gap-1">
+                                    <span className="w-1 h-1 rounded-full bg-red-500" /> {errors.password.message}
+                                </p>
                             )}
                         </div>
 
@@ -152,23 +156,23 @@ const LoginPage = () => {
                             disabled={isLoading}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="btn-3d btn-3d-primary w-full py-3 text-center disabled:opacity-60"
+                            className="w-full py-3.5 rounded-xl text-white font-bold text-[15px] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] shadow-lg shadow-[var(--primary)]/30 hover:shadow-[var(--primary)]/50 transition-all disabled:opacity-70 flex justify-center mt-8"
                         >
                             {isLoading ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    Signing in...
+                                <span className="flex items-center gap-2">
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    Authenticating...
                                 </span>
                             ) : (
-                                'Sign In'
+                                'Sign In to Dashboard'
                             )}
                         </motion.button>
                     </form>
 
-                    <p className="text-center text-sm mt-6" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-center text-sm mt-8 text-[var(--text-muted)] font-medium">
                         Don't have an account?{' '}
-                        <Link to="/register" className="font-semibold" style={{ color: 'var(--primary)' }}>
-                            Register
+                        <Link to="/register" className="font-bold text-[var(--primary)] hover:text-[var(--primary-light)] transition-colors hover:underline">
+                            Create one now
                         </Link>
                     </p>
                 </motion.div>

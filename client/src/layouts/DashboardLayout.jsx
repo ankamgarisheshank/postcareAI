@@ -37,7 +37,7 @@ const DashboardLayout = () => {
     };
 
     return (
-        <div className="flex min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+        <div className="flex min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans">
             {/* Mobile overlay */}
             <AnimatePresence>
                 {sidebarOpen && (
@@ -53,12 +53,8 @@ const DashboardLayout = () => {
 
             {/* Sidebar */}
             <motion.aside
-                className={`fixed lg:static inset-y-0 left-0 z-50 w-72 flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                    }`}
-                style={{
-                    background: 'var(--bg-secondary)',
-                    borderRight: '1px solid var(--border)',
-                }}
+                className={`fixed lg:static inset-y-0 left-0 z-50 w-[280px] flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                    } bg-[var(--bg-secondary)] border-r border-[var(--border)] shadow-2xl lg:shadow-none`}
             >
                 {/* Logo */}
                 <div className="p-6 flex items-center justify-between">
@@ -67,10 +63,10 @@ const DashboardLayout = () => {
                             <span className="text-white font-bold text-lg">P</span>
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                            <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
                                 PostCare
                             </h1>
-                            <span className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
+                            <span className="text-xs font-bold text-[var(--primary)] uppercase tracking-wider">
                                 AI Agent
                             </span>
                         </div>
@@ -79,7 +75,7 @@ const DashboardLayout = () => {
                         onClick={() => setSidebarOpen(false)}
                         className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                     >
-                        <HiOutlineX size={20} style={{ color: 'var(--text-secondary)' }} />
+                        <HiOutlineX size={22} className="text-[var(--text-secondary)]" />
                     </button>
                 </div>
 
@@ -99,7 +95,7 @@ const DashboardLayout = () => {
                 </nav>
 
                 {/* Bottom section */}
-                <div className="p-4 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
+                <div className="p-5 space-y-3 border-t border-[var(--border)] bg-gradient-to-b from-transparent to-[var(--bg-tertiary)]/30">
                     {/* Theme toggle */}
                     <button
                         onClick={toggleTheme}
@@ -110,7 +106,7 @@ const DashboardLayout = () => {
                     </button>
 
                     {/* Doctor info */}
-                    <div className="p-3 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className="p-3 rounded-2xl bg-[var(--bg-tertiary)] border border-[var(--border)] shadow-sm">
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center">
                                 <span className="text-white text-sm font-bold">
@@ -118,10 +114,10 @@ const DashboardLayout = () => {
                                 </span>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                                <p className="text-sm font-bold truncate text-[var(--text-primary)]">
                                     Dr. {doctor?.fullName || 'Doctor'}
                                 </p>
-                                <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                                <p className="text-xs font-medium truncate text-[var(--text-muted)]">
                                     {doctor?.specialization || 'General'}
                                 </p>
                             </div>
@@ -131,7 +127,7 @@ const DashboardLayout = () => {
                     {/* Logout */}
                     <button
                         onClick={handleLogout}
-                        className="sidebar-link w-full text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                        className="sidebar-link w-full text-red-500 hover:text-red-600 hover:bg-red-500/10 font-semibold"
                     >
                         <HiOutlineLogout size={20} />
                         <span>Logout</span>
@@ -143,34 +139,28 @@ const DashboardLayout = () => {
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Top Bar */}
                 <header
-                    className="h-16 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30"
-                    style={{
-                        background: 'var(--glass-bg)',
-                        backdropFilter: 'blur(20px)',
-                        borderBottom: '1px solid var(--border)',
-                    }}
+                    className="h-[72px] flex items-center justify-between px-6 lg:px-10 sticky top-0 z-30 bg-[var(--glass-bg)] backdrop-blur-xl border-b border-[var(--border)] shadow-sm"
                 >
                     <button
                         onClick={() => setSidebarOpen(true)}
                         className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                     >
-                        <HiOutlineMenu size={24} style={{ color: 'var(--text-primary)' }} />
+                        <HiOutlineMenu size={24} className="text-[var(--text-primary)]" />
                     </button>
 
                     <div className="hidden lg:block">
-                        <h2 className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                            Welcome back, <span style={{ color: 'var(--text-primary)' }}>Dr. {doctor?.fullName}</span>
+                        <h2 className="text-sm font-medium text-[var(--text-muted)]">
+                            Welcome back, <span className="text-[var(--text-primary)] font-semibold">Dr. {doctor?.fullName}</span>
                         </h2>
                     </div>
 
                     <div className="flex items-center gap-3">
                         <NavLink
                             to="/alerts"
-                            className="relative p-2 rounded-xl transition-colors"
-                            style={{ background: 'var(--bg-tertiary)' }}
+                            className="relative p-2.5 rounded-xl transition-all hover:scale-105 bg-[var(--bg-tertiary)] border border-[var(--border)] shadow-sm hover:shadow-md"
                         >
-                            <HiOutlineBell size={20} style={{ color: 'var(--text-secondary)' }} />
-                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
+                            <HiOutlineBell size={22} className="text-[var(--text-primary)]" />
+                            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gradient-to-r from-red-500 to-rose-500 text-white text-[11px] flex items-center justify-center font-bold shadow-lg shadow-red-500/40 border-2 border-[var(--bg-secondary)]">
                                 !
                             </span>
                         </NavLink>
