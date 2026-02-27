@@ -199,11 +199,51 @@ const MyRecoveryPage = () => {
                 </motion.div>
             )}
 
-            {/* Two-column: Medications + Recent Logs */}
+            {/* Medication Schedule — grouped by time slot */}
+            {medications.length > 0 && (() => {
+                const timeSlots = [
+                    { key: 'morning', label: 'Morning', time: '8:00 AM', icon: '🌅', color: '#f59e0b' },
+                    { key: 'afternoon', label: 'Afternoon', time: '1:00 PM', icon: '☀️', color: '#3b82f6' },
+                    { key: 'evening', label: 'Evening', time: '8:00 PM', icon: '🌙', color: '#8b5cf6' },
+                ];
+                return (
+                    <motion.div variants={item} initial="hidden" animate="show" className="card">
+                        <h3 className="text-xl font-bold text-primary mb-4 pb-3 border-b">💊 My Medication Schedule</h3>
+                        <div className="space-y-5">
+                            {timeSlots.map(slot => {
+                                const slotMeds = medications.filter(m => m.isActive !== false && (m.scheduleTimes || []).includes(slot.key));
+                                if (slotMeds.length === 0) return null;
+                                return (
+                                    <div key={slot.key}>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <span style={{ fontSize: '1.25rem' }}>{slot.icon}</span>
+                                            <span className="font-bold text-base text-primary">{slot.label}</span>
+                                            <span className="text-xs text-muted font-medium">— {slot.time}</span>
+                                        </div>
+                                        <div className="space-y-2" style={{ paddingLeft: 12 }}>
+                                            {slotMeds.map(med => (
+                                                <div key={med._id} className="flex items-center gap-3 p-3" style={{ background: 'var(--bg-tertiary)', borderRadius: 12, border: `1px solid ${slot.color}22`, borderLeft: `3px solid ${slot.color}` }}>
+                                                    <div style={{ width: 36, height: 36, borderRadius: 8, background: `${slot.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>💊</div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <p className="font-bold text-sm text-primary">{med.drugName || med.medicineName}</p>
+                                                        <p className="text-xs text-muted">{med.dosage} {med.instructions ? `• ${med.instructions}` : ''}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                );
+            })()}
+
+            {/* Two-column: Medications List + Recent Logs */}
             <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))' }}>
-                {/* Medications */}
+                {/* Full Medications List */}
                 <motion.div variants={item} initial="hidden" animate="show" className="card flex flex-col">
-                    <h3 className="text-xl font-bold text-primary mb-4 pb-3 border-b">My Medications</h3>
+                    <h3 className="text-xl font-bold text-primary mb-4 pb-3 border-b">All Medications</h3>
                     <div className="space-y-3" style={{ flex: 1, overflowY: 'auto', maxHeight: 400 }}>
                         {medications.length === 0 ? (
                             <p className="text-center py-8 text-muted font-medium">No medications prescribed yet.</p>
@@ -213,8 +253,15 @@ const MyRecoveryPage = () => {
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <p className="font-bold text-sm text-primary truncate">{med.drugName || med.medicineName}</p>
                                     <p className="text-xs text-muted">{med.dosage} &bull; {med.frequency || 'Daily'}</p>
+                                    {(med.scheduleTimes || []).length > 0 && (
+                                        <div className="flex gap-1 mt-1">
+                                            {med.scheduleTimes.map(t => (
+                                                <span key={t} className="badge badge-primary" style={{ fontSize: '0.5625rem', padding: '2px 6px' }}>{t}</span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                {med.isActive !== false && <span className="badge badge-success">Active</span>}
+                                {med.isActive !== false ? <span className="badge badge-success">Active</span> : <span className="badge badge-warning">Ended</span>}
                             </div>
                         ))}
                     </div>

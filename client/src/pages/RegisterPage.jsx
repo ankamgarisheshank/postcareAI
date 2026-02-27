@@ -14,7 +14,7 @@ const registerSchema = z.object({
     password: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string(),
     specialization: z.string().optional(),
-    phone: z.string().optional(),
+    phone: z.string().optional().transform(v => v && v.length > 0 ? (v.startsWith('+91') ? v : `+91${v.replace(/^0+/, '')}`) : ''),
     hospital: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, { message: 'Passwords do not match', path: ['confirmPassword'] });
 
@@ -41,7 +41,7 @@ const RegisterPage = () => {
         { name: 'fullName', label: 'Full Name', icon: HiOutlineUser, placeholder: 'Dr. John Doe', required: true },
         { name: 'email', label: 'Email', icon: HiOutlineMail, placeholder: 'doctor@hospital.com', type: 'email', required: true },
         { name: 'specialization', label: 'Specialization', icon: HiOutlineUser, placeholder: 'e.g. Cardiology' },
-        { name: 'phone', label: 'Phone', icon: HiOutlinePhone, placeholder: '+91 9876543210' },
+        { name: 'phone', label: 'Phone', icon: HiOutlinePhone, placeholder: '9876543210', isPhone: true },
         { name: 'hospital', label: 'Hospital', icon: HiOutlineOfficeBuilding, placeholder: 'Hospital Name' },
     ];
 
@@ -72,11 +72,19 @@ const RegisterPage = () => {
                                 <label className="block text-sm font-semibold mb-1 text-secondary">
                                     {field.label} {field.required && <span style={{ color: '#ef4444' }}>*</span>}
                                 </label>
-                                <div className="relative">
-                                    <field.icon className="input-icon" size={20} />
-                                    <input {...register(field.name)} type={field.type || 'text'} placeholder={field.placeholder}
-                                        className="input-field has-icon h-44" />
-                                </div>
+                                {field.isPhone ? (
+                                    <div className="phone-prefix-group">
+                                        <span className="phone-prefix">+91</span>
+                                        <input {...register(field.name)} type="tel" placeholder={field.placeholder}
+                                            className="input-field h-44 phone-input" />
+                                    </div>
+                                ) : (
+                                    <div className="relative">
+                                        <field.icon className="input-icon" size={20} />
+                                        <input {...register(field.name)} type={field.type || 'text'} placeholder={field.placeholder}
+                                            className="input-field has-icon h-44" />
+                                    </div>
+                                )}
                                 {errors[field.name] && <p className="form-error"><span className="form-error-dot" /> {errors[field.name].message}</p>}
                             </div>
                         ))}

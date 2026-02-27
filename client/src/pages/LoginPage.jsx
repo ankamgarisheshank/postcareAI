@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../context/AuthContext';
 import toast, { Toaster } from 'react-hot-toast';
-import { HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff, HiOutlinePhone } from 'react-icons/hi';
+import { HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
 
 const loginSchema = z.object({
     identifier: z.string().min(1, 'Email or phone is required'),
@@ -24,12 +24,17 @@ const LoginPage = () => {
     });
 
     const identifierValue = watch('identifier', '');
-    const isPhone = identifierValue && !identifierValue.includes('@');
+    const isPhone = identifierValue && !identifierValue.includes('@') && /^\d/.test(identifierValue);
 
     const onSubmit = async (data) => {
         setIsLoading(true);
         try {
-            await login(data.identifier, data.password);
+            // Auto-prepend +91 for phone numbers
+            let identifier = data.identifier.trim();
+            if (!identifier.includes('@') && /^\d/.test(identifier)) {
+                identifier = identifier.startsWith('+91') ? identifier : `+91${identifier.replace(/^0+/, '')}`;
+            }
+            await login(identifier, data.password);
             toast.success('Welcome back!');
             navigate('/dashboard');
         } catch (error) {
@@ -67,11 +72,19 @@ const LoginPage = () => {
                         {/* Email or Phone */}
                         <div className="input-group">
                             <label className="block text-sm font-semibold mb-2 text-secondary">Email or Phone</label>
-                            <div className="relative">
-                                {isPhone ? <HiOutlinePhone className="input-icon" size={20} /> : <HiOutlineMail className="input-icon" size={20} />}
-                                <input {...register('identifier')} type="text" placeholder="doctor@hospital.com or +91 9876543210"
-                                    className="input-field has-icon h-48" />
-                            </div>
+                            {isPhone ? (
+                                <div className="phone-prefix-group">
+                                    <span className="phone-prefix">+91</span>
+                                    <input {...register('identifier')} type="tel" placeholder="9876543210"
+                                        className="input-field h-48 phone-input" />
+                                </div>
+                            ) : (
+                                <div className="relative">
+                                    <HiOutlineMail className="input-icon" size={20} />
+                                    <input {...register('identifier')} type="text" placeholder="doctor@hospital.com or 9876543210"
+                                        className="input-field has-icon h-48" />
+                                </div>
+                            )}
                             {errors.identifier && <p className="form-error"><span className="form-error-dot" /> {errors.identifier.message}</p>}
                         </div>
 

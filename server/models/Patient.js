@@ -111,6 +111,15 @@ const patientSchema = new mongoose.Schema(
             max: 100,
             default: 0,
         },
+
+        // ─── Family / Emergency Contacts ───
+        familyMembers: [
+            {
+                name: { type: String, trim: true },
+                relation: { type: String, trim: true }, // e.g. "Father", "Wife", "Son"
+                phone: { type: String, trim: true },    // WhatsApp-capable
+            },
+        ],
     },
     {
         timestamps: true,

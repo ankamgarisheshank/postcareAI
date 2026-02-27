@@ -6,12 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createPatient, updatePatient, getPatient } from '../services/patientService';
 import toast, { Toaster } from 'react-hot-toast';
+import { HiOutlinePlus, HiOutlineTrash } from 'react-icons/hi';
 
 const schema = z.object({
     fullName: z.string().min(2, 'Name is required'),
     age: z.coerce.number().min(0).max(150),
     gender: z.enum(['Male', 'Female', 'Other']),
-    phone: z.string().min(5, 'Phone is required'),
+    phone: z.string().min(10, 'Phone is required').transform(v => v.startsWith('+91') ? v : `+91${v.replace(/^0+/, '')}`),
     address: z.string().optional(),
     admissionDate: z.string().optional(),
     dischargeDate: z.string().optional(),
@@ -29,6 +30,7 @@ const PatientFormPage = () => {
     const navigate = useNavigate();
     const isEdit = !!id;
     const [isLoading, setIsLoading] = useState(false);
+    const [familyMembers, setFamilyMembers] = useState([]);
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm({
         resolver: zodResolver(schema),
@@ -41,25 +43,33 @@ const PatientFormPage = () => {
                 const p = data.data;
                 reset({
                     ...p,
+                    phone: (p.phone || '').replace(/^\+91/, ''),
                     admissionDate: p.admissionDate ? new Date(p.admissionDate).toISOString().split('T')[0] : '',
                     dischargeDate: p.dischargeDate ? new Date(p.dischargeDate).toISOString().split('T')[0] : '',
                     operationDate: p.operationDate ? new Date(p.operationDate).toISOString().split('T')[0] : '',
                 });
+                if (p.familyMembers?.length) setFamilyMembers(p.familyMembers.map(f => ({ name: f.name || '', relation: f.relation || '', phone: f.phone || '' })));
             }).catch(() => { toast.error('Failed to load'); navigate('/patients'); });
         }
     }, [id]);
 
+    const addFamilyMember = () => setFamilyMembers(prev => [...prev, { name: '', relation: '', phone: '' }]);
+    const removeFamilyMember = (idx) => setFamilyMembers(prev => prev.filter((_, i) => i !== idx));
+    const updateFamilyMember = (idx, field, value) => setFamilyMembers(prev => prev.map((f, i) => i === idx ? { ...f, [field]: value } : f));
+
     const onSubmit = async (data) => {
         setIsLoading(true);
         try {
-            if (isEdit) { await updatePatient(id, data); toast.success('Updated!'); }
-            else { await createPatient(data); toast.success('Patient added!'); }
+            const validFamily = familyMembers.filter(f => f.name && f.phone);
+            const payload = { ...data, familyMembers: validFamily };
+            if (isEdit) { await updatePatient(id, payload); toast.success('Updated!'); }
+            else { await createPatient(payload); toast.success('Patient added!'); }
             navigate('/patients');
         } catch (e) { toast.error(e.response?.data?.message || 'Failed'); }
         finally { setIsLoading(false); }
     };
 
-    const Field = ({ name, label, type = 'text', opts, req, area }) => (
+    const Field = ({ name, label, type = 'text', opts, req, area, phone }) => (
         <div style={{ gridColumn: area ? '1 / -1' : undefined }}>
             <label className="block text-sm font-semibold text-secondary" style={{ marginBottom: 6 }}>
                 {label} {req && <span style={{ color: '#ef4444' }}>*</span>}
@@ -70,6 +80,11 @@ const PatientFormPage = () => {
                 </select>
             ) : area ? (
                 <textarea {...register(name)} rows={4} className="input-field" placeholder={`Enter ${label.toLowerCase()}...`} style={{ resize: 'none' }} />
+            ) : phone ? (
+                <div className="phone-prefix-group">
+                    <span className="phone-prefix">+91</span>
+                    <input {...register(name)} type="tel" className="input-field h-48 phone-input" placeholder="9876543210" />
+                </div>
             ) : (
                 <input {...register(name)} type={type} className="input-field h-48" placeholder={`Enter ${label.toLowerCase()}...`} />
             )}
@@ -96,8 +111,56 @@ const PatientFormPage = () => {
                         <Field name="fullName" label="Full Name" req />
                         <Field name="age" label="Age" type="number" req />
                         <Field name="gender" label="Gender" opts={['Male', 'Female', 'Other']} req />
-                        <Field name="phone" label="Phone (WhatsApp)" req />
+                        <Field name="phone" label="Phone (WhatsApp)" req phone />
                         <Field name="address" label="Address" area />
+                    </div>
+                </motion.div>
+
+                {/* Family / Emergency Contacts */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="card">
+                    <div className="card-glow card-glow-primary" />
+                    <div className="flex items-center justify-between mb-6" style={{ position: 'relative', zIndex: 1 }}>
+                        <h3 className="text-xl font-bold text-primary">
+                            <span style={{ fontSize: '1.25rem', marginRight: 8 }}>👨‍👩‍👧</span> Family / Emergency Contacts
+                        </h3>
+                        <button type="button" onClick={addFamilyMember} className="btn btn-ghost btn-sm">
+                            <HiOutlinePlus size={16} /> Add Member
+                        </button>
+                    </div>
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        {familyMembers.length === 0 ? (
+                            <p className="text-sm text-muted text-center py-4" style={{ fontStyle: 'italic' }}>
+                                No family contacts added. Click "Add Member" to add emergency contacts who will be notified if the patient misses medications.
+                            </p>
+                        ) : (
+                            <div className="space-y-4">
+                                {familyMembers.map((fm, idx) => (
+                                    <div key={idx} className="grid gap-4 items-end" style={{ gridTemplateColumns: '1fr 1fr 1fr auto', padding: 12, borderRadius: 12, background: 'var(--bg-tertiary)', border: '1px solid var(--border)' }}>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-muted mb-1">Name</label>
+                                            <input value={fm.name} onChange={e => updateFamilyMember(idx, 'name', e.target.value)} className="input-field h-44" placeholder="e.g. Ramesh Kumar" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-muted mb-1">Relation</label>
+                                            <select value={fm.relation} onChange={e => updateFamilyMember(idx, 'relation', e.target.value)} className="input-field h-44" style={{ cursor: 'pointer' }}>
+                                                <option value="">Select...</option>
+                                                {['Father', 'Mother', 'Wife', 'Husband', 'Son', 'Daughter', 'Brother', 'Sister', 'Guardian', 'Other'].map(r => <option key={r} value={r}>{r}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-muted mb-1">Phone (WhatsApp)</label>
+                                            <div className="phone-prefix-group">
+                                                <span className="phone-prefix">+91</span>
+                                                <input value={fm.phone.replace(/^\+91/, '')} onChange={e => updateFamilyMember(idx, 'phone', e.target.value.startsWith('+91') ? e.target.value : `+91${e.target.value.replace(/^0+/, '')}`)} type="tel" className="input-field h-44 phone-input" placeholder="9876543210" />
+                                            </div>
+                                        </div>
+                                        <button type="button" onClick={() => removeFamilyMember(idx)} className="btn-icon btn-icon-delete" style={{ marginBottom: 2 }}>
+                                            <HiOutlineTrash size={18} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </motion.div>
 

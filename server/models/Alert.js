@@ -17,7 +17,7 @@ const alertSchema = new mongoose.Schema(
         },
         type: {
             type: String,
-            enum: ['red_flag', 'medication_missed', 'patient_message', 'call_request', 'symptom', 'medication', 'emergency', 'system'],
+            enum: ['red_flag', 'medication_missed', 'missed_medication', 'patient_message', 'call_request', 'symptom', 'medication', 'emergency', 'system'],
             required: true,
             default: 'symptom',
         },

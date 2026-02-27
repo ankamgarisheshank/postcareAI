@@ -895,6 +895,67 @@ textarea.input-field {
   min-height: 100px;
 }
 
+/* Phone prefix group */
+.phone-prefix-group {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.phone-prefix-group:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.phone-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  color: var(--text-muted);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  user-select: none;
+  border-right: 1.5px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  height: 100%;
+  white-space: nowrap;
+}
+
+.phone-input {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  flex: 1;
+  min-width: 0;
+}
+
+.phone-input:focus {
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Date picker dark theme */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(0.8);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: opacity 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.7;
+}
+
 select.input-field {
   cursor: pointer;
   appearance: none;

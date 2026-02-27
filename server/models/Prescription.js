@@ -28,7 +28,8 @@ const prescriptionSchema = new mongoose.Schema(
             required: [true, 'Frequency is required'],
             trim: true,
         },
-        scheduleTimes: [{ type: String }],
+        // When exactly during the day: "morning","afternoon","evening"
+        scheduleTimes: [{ type: String, enum: ['morning', 'afternoon', 'evening'] }],
         startDate: {
             type: Date,
             required: true,
@@ -58,6 +59,15 @@ const prescriptionSchema = new mongoose.Schema(
                 sentAt: Date,
                 scheduledFor: String,
                 status: { type: String, enum: ['sent', 'failed', 'pending'], default: 'sent' },
+            },
+        ],
+        // Track patient dose acknowledgements
+        adherenceLog: [
+            {
+                date: { type: Date, default: Date.now },
+                timeSlot: { type: String, enum: ['morning', 'afternoon', 'evening'] },
+                status: { type: String, enum: ['taken', 'skipped', 'missed', 'pending'], default: 'pending' },
+                respondedAt: Date,
             },
         ],
     },

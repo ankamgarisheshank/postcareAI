@@ -127,6 +127,7 @@ const PatientDetailPage = () => {
             {/* Tab Content */}
             <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 {activeTab === 'overview' && (
+                    <div className="space-y-6">
                     <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))' }}>
                         <div className="card space-y-5">
                             <h3 className="text-xl font-bold text-primary pb-2 border-b">Full Medical Information</h3>
@@ -166,6 +167,26 @@ const PatientDetailPage = () => {
                                 Calculated autonomously using daily AI health checkups
                             </p>
                         </div>
+                    </div>
+                    {/* Family / Emergency Contacts */}
+                    {(patient.familyMembers?.length > 0) && (
+                        <div className="card space-y-4">
+                            <h3 className="text-xl font-bold text-primary pb-2 border-b">
+                                <span style={{ marginRight: 8 }}>👨‍👩‍👧</span>Family / Emergency Contacts
+                            </h3>
+                            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
+                                {patient.familyMembers.map((fm, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-3" style={{ background: 'var(--bg-tertiary)', borderRadius: 12, border: '1px solid var(--border)' }}>
+                                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>👤</div>
+                                        <div>
+                                            <p className="font-bold text-sm text-primary">{fm.name}</p>
+                                            <p className="text-xs text-muted">{fm.relation} &bull; {fm.phone}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     </div>
                 )}
 
@@ -235,7 +256,11 @@ const PatientDetailPage = () => {
                                     <h3 className="text-lg font-bold text-primary">No Medications Assigned</h3>
                                     <p className="text-sm text-muted mt-1 font-medium">Add a prescription or manually create a medication schedule.</p>
                                 </div>
-                            ) : patient.medications.map((med, index) => (
+                            ) : patient.medications.map((med, index) => {
+                                const schedTimes = med.scheduleTimes || [];
+                                const timeIcon = { morning: '🌅', afternoon: '☀️', evening: '🌙' };
+                                const timeLabel = { morning: '8:00 AM', afternoon: '1:00 PM', evening: '8:00 PM' };
+                                return (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}
                                     key={med._id} className="patient-card">
                                     <div className="card-top-line" />
@@ -243,33 +268,36 @@ const PatientDetailPage = () => {
                                         <div className="flex gap-4 items-center">
                                             <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>💊</div>
                                             <div>
-                                                <h4 className="font-extrabold text-base text-primary tracking-tight">{med.medicineName}</h4>
+                                                <h4 className="font-extrabold text-base text-primary tracking-tight">{med.drugName || med.medicineName}</h4>
                                                 <div className="flex gap-2 mt-1" style={{ flexWrap: 'wrap' }}>
                                                     <span className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}>{med.dosage}</span>
-                                                    <span className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>{med.foodInstruction}</span>
-                                                </div>
-                                                <div className="flex gap-1.5 mt-2">
-                                                    {['morning', 'afternoon', 'evening'].map(time => (
-                                                        med.frequency?.[time] && (
-                                                            <span key={time} className="text-[9px] uppercase font-black px-2 py-1 rounded-md bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 shadow-sm">
-                                                                {time}
-                                                            </span>
-                                                        )
-                                                    ))}
+                                                    {med.instructions && <span className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>{med.instructions}</span>}
+                                                    <span className="badge badge-info">{med.frequency}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+                                    {/* Schedule times */}
+                                    <div className="space-y-2" style={{ marginBottom: 12 }}>
+                                        {schedTimes.map(t => (
+                                            <div key={t} className="flex items-center gap-2" style={{ padding: '6px 10px', borderRadius: 8, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}>
+                                                <span>{timeIcon[t] || '⏰'}</span>
+                                                <span className="text-xs font-bold text-primary" style={{ textTransform: 'capitalize' }}>{t}</span>
+                                                <span className="text-xs text-muted">— {timeLabel[t] || t}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {/* Date range */}
+                                    <p className="text-xs text-muted" style={{ marginBottom: 8 }}>
+                                        {med.startDate && new Date(med.startDate).toLocaleDateString()} → {med.endDate && new Date(med.endDate).toLocaleDateString()}
+                                    </p>
                                     <div className="flex justify-between items-end" style={{ marginTop: 'auto' }}>
-                                        <div className="flex gap-1">
-                                            {['morning', 'afternoon', 'evening'].map(time => (
-                                                med.frequency?.[time] && <span key={time} className="badge badge-primary" style={{ fontSize: '0.5625rem' }}>{time}</span>
-                                            ))}
-                                        </div>
+                                        <span className={`badge ${med.isActive !== false ? 'badge-success' : 'badge-warning'}`}>{med.isActive !== false ? 'Active' : 'Ended'}</span>
                                         <button onClick={() => handleDeleteMed(med._id)} className="btn-icon btn-icon-delete"><HiOutlineTrash size={18} /></button>
                                     </div>
                                 </motion.div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 )}
