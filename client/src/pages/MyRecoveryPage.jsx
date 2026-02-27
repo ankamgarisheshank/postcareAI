@@ -31,16 +31,9 @@ const MyRecoveryPage = () => {
     const fetchMyData = async (silent = false) => {
         try {
             let data;
-            if (user?.linkedPatientId) {
-                const resp = await api.get(`/patients/${user.linkedPatientId}`);
-                data = resp.data.data;
-            } else {
-                const resp = await api.get('/patients', { params: { search: user?.phone, limit: 1 } });
-                if (resp.data.data?.length > 0) {
-                    const detail = await api.get(`/patients/${resp.data.data[0]._id}`);
-                    data = detail.data.data;
-                }
-            }
+            // Use the patient-facing /me endpoint (no doctor-gating)
+            const resp = await api.get('/patients/me');
+            data = resp.data.data;
             if (data) {
                 const newMeds = (data.medications || data.prescriptions || []);
                 // Notify if new prescriptions appeared

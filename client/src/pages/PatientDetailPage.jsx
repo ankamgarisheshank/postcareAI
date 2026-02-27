@@ -286,28 +286,68 @@ const PatientDetailPage = () => {
                     </div>
                 )}
 
-                {activeTab === 'nutrition' && (
-                    <div className="card">
-                        <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>Nutrition Schedule</h3>
-                        {(patient.nutritionSchedule || []).length === 0 ? (
-                            <p style={{ fontSize: 14, color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>No nutrition schedule assigned yet.</p>
-                        ) : (
-                            <div className="space-y-4">
-                                {patient.nutritionSchedule.map((meal, i) => (
-                                    <div key={i} className="flex items-start gap-4 p-3" style={{ background: 'var(--bg)', borderRadius: 12, border: '1px solid var(--border-light)' }}>
-                                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#6d8a00', flexShrink: 0 }}>
-                                            {meal.mealType?.charAt(0) || 'M'}
+                {activeTab === 'nutrition' && (() => {
+                    const ns = patient.nutritionSchedule;
+                    const mealSlots = [
+                        { key: 'breakfast', label: 'Breakfast', emoji: '🌅' },
+                        { key: 'morningSnack', label: 'Morning Snack', emoji: '🍎' },
+                        { key: 'lunch', label: 'Lunch', emoji: '☀️' },
+                        { key: 'eveningSnack', label: 'Evening Snack', emoji: '🍪' },
+                        { key: 'dinner', label: 'Dinner', emoji: '🌙' },
+                    ];
+                    const hasMeals = ns && mealSlots.some(s => ns[s.key]?.length > 0);
+                    return (
+                        <div className="card">
+                            <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>Nutrition Schedule</h3>
+                            {!hasMeals ? (
+                                <p style={{ fontSize: 14, color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>No nutrition schedule assigned yet.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {mealSlots.map(slot => {
+                                        const items = ns[slot.key] || [];
+                                        if (items.length === 0) return null;
+                                        const totalCal = items.reduce((s, it) => s + (it.calories || 0), 0);
+                                        return (
+                                            <div key={slot.key} className="p-4" style={{ background: 'var(--bg)', borderRadius: 12, border: '1px solid var(--border-light)' }}>
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                                                        {slot.emoji}
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{slot.label}</p>
+                                                    </div>
+                                                    {totalCal > 0 && <span className="badge badge-accent" style={{ fontSize: 11 }}>{totalCal} cal</span>}
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {items.map((item, j) => (
+                                                        <div key={j} className="flex items-center gap-3" style={{ padding: '6px 10px', background: 'var(--bg-card)', borderRadius: 8, border: '1px solid var(--border-light)' }}>
+                                                            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', flex: 1 }}>{item.name}</span>
+                                                            {item.quantity && <span className="badge badge-neutral" style={{ fontSize: 11 }}>{item.quantity}</span>}
+                                                            {item.calories > 0 && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{item.calories} cal</span>}
+                                                            {item.notes && <span style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>{item.notes}</span>}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {ns.restrictions?.length > 0 && (
+                                        <div className="p-3" style={{ background: 'rgba(239,68,68,0.05)', borderRadius: 12, border: '1px solid rgba(239,68,68,0.15)' }}>
+                                            <p style={{ fontSize: 13, fontWeight: 700, color: '#ef4444', marginBottom: 4 }}>⚠️ Dietary Restrictions</p>
+                                            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{ns.restrictions.join(', ')}</p>
                                         </div>
-                                        <div>
-                                            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{meal.mealType}</p>
-                                            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>{meal.items?.join(', ') || meal.description || 'No details'}</p>
+                                    )}
+                                    {ns.specialInstructions && (
+                                        <div className="p-3" style={{ background: 'rgba(59,130,246,0.05)', borderRadius: 12, border: '1px solid rgba(59,130,246,0.15)' }}>
+                                            <p style={{ fontSize: 13, fontWeight: 700, color: '#3b82f6', marginBottom: 4 }}>📝 Special Instructions</p>
+                                            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{ns.specialInstructions}</p>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
 
                 {activeTab === 'recovery' && (
                     <div className="space-y-5">

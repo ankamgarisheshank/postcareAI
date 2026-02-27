@@ -108,4 +108,50 @@ const sendEmergency = asyncHandler(async (req, res) => {
     res.status(201).json({ success: true, data: alert });
 });
 
-module.exports = { createPatient, getPatients, getPatient, updatePatient, deletePatient, uploadPrescription, sendEmergency };
+/**
+ * @desc    Get the logged-in patient's own data (no doctor-gating)
+ * @route   GET /api/patients/me
+ * @access  Private (patient)
+ */
+const getMyPatientData = asyncHandler(async (req, res) => {
+    // Find by linkedPatientId first, then fall back to phone match
+    let patient;
+    if (req.user.linkedPatientId) {
+        patient = await Patient.findById(req.user.linkedPatientId).populate('doctor', 'name phone specialization hospital');
+    }
+    if (!patient && req.user.phone) {
+        patient = await Patient.findOne({ phone: req.user.phone }).populate('doctor', 'name phone specialization hospital');
+        // Auto-link for future fast lookups
+        if (patient) {
+            const User = require('../models/User');
+            await User.findByIdAndUpdate(req.user._id, { linkedPatientId: patient._id });
+        }
+    }
+    if (!patient) {
+        res.status(404);
+        throw new Error('No patient record found for your account. Please ask your doctor to add you.');
+    }
+
+    const [prescriptions, dailyLogs, alerts, nutritionSchedule] = await Promise.all([
+        Prescription.find({ patientId: patient._id }).sort({ createdAt: -1 }),
+        DailyLog.find({ patientId: patient._id }).sort({ date: -1 }).limit(30),
+        Alert.find({ patientId: patient._id }).sort({ createdAt: -1 }).limit(20),
+        NutritionSchedule.findOne({ patient: patient._id, isActive: true }),
+    ]);
+
+    res.json({
+        success: true,
+        data: {
+            ...patient.toObject(),
+            fullName: patient.name,
+            medications: prescriptions,
+            prescriptions,
+            recoveryLogs: dailyLogs,
+            dailyLogs,
+            alerts,
+            nutritionSchedule,
+        },
+    });
+});
+
+module.exports = { createPatient, getPatients, getPatient, getMyPatientData, updatePatient, deletePatient, uploadPrescription, sendEmergency };

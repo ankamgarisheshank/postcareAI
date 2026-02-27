@@ -4,6 +4,7 @@ const {
     createPatient,
     getPatients,
     getPatient,
+    getMyPatientData,
     updatePatient,
     deletePatient,
     uploadPrescription,
@@ -14,6 +15,9 @@ const upload = require('../middleware/upload');
 
 // All routes are protected
 router.use(protect);
+
+// Patient-facing route - must be BEFORE /:id to avoid "me" being treated as an id
+router.get('/me', getMyPatientData);
 
 router.route('/').get(getPatients).post(createPatient);
 router.route('/:id').get(getPatient).put(updatePatient).delete(deletePatient);

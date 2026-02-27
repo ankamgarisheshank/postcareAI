@@ -77,6 +77,14 @@ const registerPatient = asyncHandler(async (req, res) => {
         role: 'patient',
     });
 
+    // Auto-link if a Patient record already exists for this phone
+    const Patient = require('../models/Patient');
+    const existingPatient = await Patient.findOne({ phone });
+    if (existingPatient) {
+        user.linkedPatientId = existingPatient._id;
+        await user.save();
+    }
+
     const token = generateToken(user._id);
 
     res.status(201).json({
@@ -118,6 +126,16 @@ const loginDoctor = asyncHandler(async (req, res) => {
     if (!isMatch) {
         res.status(401);
         throw new Error('Invalid credentials');
+    }
+
+    // Auto-link patient if not linked yet
+    if (user.role === 'patient' && !user.linkedPatientId && user.phone) {
+        const Patient = require('../models/Patient');
+        const existingPatient = await Patient.findOne({ phone: user.phone });
+        if (existingPatient) {
+            user.linkedPatientId = existingPatient._id;
+            await user.save();
+        }
     }
 
     const token = generateToken(user._id);
