@@ -54,6 +54,13 @@ const MessagesPage = () => {
                 setMessages(prev => [...prev, { _id: `temp-${Date.now()}`, from: isDoctor ? 'doctor' : 'patient', to: 'ai', content: text, createdAt: new Date().toISOString() }]);
                 const { data } = await api.post('/messages/agent', { patientId: selectedPatientId, message: text });
                 setMessages(prev => [...prev, { _id: `ai-${Date.now()}`, from: 'ai', to: isDoctor ? 'doctor' : 'patient', content: data.data.response, createdAt: new Date().toISOString() }]);
+                // Show toasts for agentic actions
+                if (data.data.prescriptionsCreated > 0) {
+                    toast.success(`💊 ${data.data.prescriptionsCreated} prescription(s) created & patient notified via WhatsApp`, { duration: 5000 });
+                }
+                if (data.data.whatsappSent > 0) {
+                    toast.success(`📱 WhatsApp message sent to patient`, { duration: 3000 });
+                }
             } else {
                 setMessages(prev => [...prev, { _id: `temp-${Date.now()}`, from: isDoctor ? 'doctor' : 'patient', to: isDoctor ? 'patient' : 'doctor', content: text, createdAt: new Date().toISOString() }]);
                 await api.post('/messages', { patientId: selectedPatientId, content: text });

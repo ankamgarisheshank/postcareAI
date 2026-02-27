@@ -17,22 +17,42 @@ const MyRecoveryPage = () => {
     const { user } = useAuth();
     const [patientData, setPatientData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [prevMedCount, setPrevMedCount] = useState(0);
 
     useEffect(() => { fetchMyData(); }, []);
-    const fetchMyData = async () => {
+
+    // Poll every 30s for new prescriptions / data changes
+    useEffect(() => {
+        if (!patientData) return;
+        const interval = setInterval(() => { fetchMyData(true); }, 30000);
+        return () => clearInterval(interval);
+    }, [patientData]);
+
+    const fetchMyData = async (silent = false) => {
         try {
+            let data;
             if (user?.linkedPatientId) {
-                const { data } = await api.get(`/patients/${user.linkedPatientId}`);
-                setPatientData(data.data);
+                const resp = await api.get(`/patients/${user.linkedPatientId}`);
+                data = resp.data.data;
             } else {
-                const { data } = await api.get('/patients', { params: { search: user?.phone, limit: 1 } });
-                if (data.data?.length > 0) {
-                    const detail = await api.get(`/patients/${data.data[0]._id}`);
-                    setPatientData(detail.data.data);
+                const resp = await api.get('/patients', { params: { search: user?.phone, limit: 1 } });
+                if (resp.data.data?.length > 0) {
+                    const detail = await api.get(`/patients/${resp.data.data[0]._id}`);
+                    data = detail.data.data;
                 }
             }
-        } catch (err) { console.error('Failed to load patient data:', err); }
-        finally { setLoading(false); }
+            if (data) {
+                const newMeds = (data.medications || data.prescriptions || []);
+                // Notify if new prescriptions appeared
+                if (prevMedCount > 0 && newMeds.length > prevMedCount) {
+                    const diff = newMeds.length - prevMedCount;
+                    toast.success(`💊 ${diff} new medication(s) prescribed! Check your medications below.`, { duration: 6000, icon: '🩺' });
+                }
+                setPrevMedCount(newMeds.length);
+                setPatientData(data);
+            }
+        } catch (err) { if (!silent) console.error('Failed to load patient data:', err); }
+        finally { if (!silent) setLoading(false); }
     };
 
     const tooltipStyle = { background: '#fff', border: '1px solid #e8e8e8', borderRadius: 10, fontFamily: 'Inter', fontSize: 13 };
@@ -158,30 +178,54 @@ const MyRecoveryPage = () => {
                 {/* Medications */}
                 <div className="card">
                     <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', borderBottom: '1px solid var(--border)', paddingBottom: 10, marginBottom: 16 }}>My Medications</h3>
-                    <div className="space-y-3" style={{ maxHeight: 350, overflowY: 'auto' }}>
+                    <div className="space-y-3" style={{ maxHeight: 450, overflowY: 'auto' }}>
                         {medications.length === 0 ? (
                             <p style={{ fontSize: 14, color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>No medications prescribed yet.</p>
-                        ) : medications.map((med) => (
-                            <div key={med._id} className="flex items-center gap-3 p-3" style={{ background: 'var(--bg)', borderRadius: 12, border: '1px solid var(--border-light)' }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6d8a00', flexShrink: 0 }}>
-                                    <HiOutlineBeaker size={20} />
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }} className="truncate">{med.drugName || med.medicineName}</p>
-                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
-                                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{med.dosage}</span>
-                                        {med.scheduleTimes?.map(t => (
-                                            <span key={t} className="badge badge-accent" style={{ fontSize: 10, padding: '2px 6px' }}>
-                                                {t === 'morning' ? '🌅' : t === 'afternoon' ? '☀️' : '🌙'} {t}
+                        ) : medications.map((med) => {
+                            const timeLabels = { morning: '8:00 AM', afternoon: '1:00 PM', evening: '8:00 PM' };
+                            const timeEmojis = { morning: '🌅', afternoon: '☀️', evening: '🌙' };
+                            const daysLeft = med.endDate ? Math.max(0, Math.ceil((new Date(med.endDate) - new Date()) / 86400000)) : null;
+                            return (
+                                <div key={med._id} className="p-3" style={{ background: 'var(--bg)', borderRadius: 12, border: '1px solid var(--border-light)' }}>
+                                    <div className="flex items-center gap-3">
+                                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6d8a00', flexShrink: 0 }}>
+                                            <HiOutlineBeaker size={20} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div className="flex items-center gap-2">
+                                                <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }} className="truncate">{med.drugName || med.medicineName}</p>
+                                                {med.isActive !== false && <span className="badge badge-success" style={{ fontSize: 10 }}>Active</span>}
+                                            </div>
+                                            <p style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>{med.dosage} &bull; {med.frequency || 'Daily'}</p>
+                                        </div>
+                                        {daysLeft !== null && (
+                                            <span className={`badge ${daysLeft <= 3 ? 'badge-danger' : daysLeft <= 7 ? 'badge-warning' : 'badge-accent'}`} style={{ fontSize: 10, whiteSpace: 'nowrap' }}>
+                                                {daysLeft === 0 ? 'Last day' : `${daysLeft}d left`}
                                             </span>
-                                        ))}
-                                        {!med.scheduleTimes?.length && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>• {med.frequency || 'Daily'}</span>}
+                                        )}
                                     </div>
-                                    {med.instructions && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{med.instructions}</p>}
+                                    {/* Schedule times */}
+                                    {med.scheduleTimes?.length > 0 && (
+                                        <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                                            {med.scheduleTimes.map(t => (
+                                                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 8, padding: '4px 10px' }}>
+                                                    <span style={{ fontSize: 14 }}>{timeEmojis[t] || '⏰'}</span>
+                                                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', textTransform: 'capitalize' }}>{t}</span>
+                                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>({timeLabels[t] || t})</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {!med.scheduleTimes?.length && <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>⏰ {med.frequency || 'Daily'}</p>}
+                                    {/* Instructions */}
+                                    {(med.instructions || med.foodInstruction) && (
+                                        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, background: 'var(--bg-card)', padding: '4px 8px', borderRadius: 6, display: 'inline-block' }}>
+                                            📝 {med.instructions || med.foodInstruction}
+                                        </p>
+                                    )}
                                 </div>
-                                {med.isActive !== false && <span className="badge badge-success">Active</span>}
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 

@@ -241,6 +241,22 @@ function buildPatientContext(patient, daysSinceSurgery, role = 'patient', medica
         ctx += `\nThe system will automatically deliver it via WhatsApp to ${patient.phone}.`;
         ctx += `\nAfter the tags, confirm to the doctor that you sent the message.`;
         ctx += `\nIMPORTANT: The text inside the tags should be written FOR the patient (warm, simple language, emoji OK). Do NOT include the tags in normal conversation — only when actually sending.`;
+
+        ctx += `\n\n[PRESCRIPTION CAPABILITY]`;
+        ctx += `\nYou can CREATE prescriptions directly in the patient's record when the doctor tells you to prescribe, add medication, or change medication.`;
+        ctx += `\nWhen the doctor says something like "prescribe Amoxicillin 500mg twice daily for 7 days after food" or "add Paracetamol 650mg", extract the drug details and output a JSON block wrapped in these tags:`;
+        ctx += `\n[CREATE_PRESCRIPTION]{"drugName":"Amoxicillin","dosage":"500mg","frequency":"Twice daily","scheduleTimes":["morning","evening"],"instructions":"Take after food","duration":7}[/CREATE_PRESCRIPTION]`;
+        ctx += `\nField rules:`;
+        ctx += `\n- drugName (required): exact drug name`;
+        ctx += `\n- dosage (required): e.g. "500mg", "10ml", "1 tablet"`;
+        ctx += `\n- frequency (required): "Once daily", "Twice daily", "Three times daily", or custom string`;
+        ctx += `\n- scheduleTimes (required): array from ["morning","afternoon","evening"]. Once daily=["morning"], Twice=["morning","evening"], Thrice=["morning","afternoon","evening"]`;
+        ctx += `\n- instructions: food/usage instructions e.g. "Take after food", "Take on empty stomach", "Apply on affected area"`;
+        ctx += `\n- duration: number of days (default 30 if not specified)`;
+        ctx += `\nYou can output MULTIPLE [CREATE_PRESCRIPTION] blocks if the doctor prescribes several drugs at once.`;
+        ctx += `\nAfter the tags, confirm to the doctor what you prescribed, including drug, dose, schedule, and duration.`;
+        ctx += `\nThe system will automatically save the prescription, update the patient's app, and send a WhatsApp notification to the patient.`;
+        ctx += `\nIMPORTANT: Only create prescriptions when the doctor explicitly asks to prescribe/add medication. Do NOT prescribe on your own.`;
     } else {
         ctx += ` You are speaking to the patient directly. Be warm, clear, and use emoji sparingly. Format with markdown.`;
         ctx += ` When the patient asks about their medications, provide clear details about drug names, dosage, timing, and instructions from the [CURRENT MEDICATIONS] section.`;
@@ -351,7 +367,90 @@ const agentChat = asyncHandler(async (req, res) => {
     const systemContext = buildPatientContext(patient, daysSinceSurgery, role, activeMeds);
     let aiResponse = await askAgent(message, systemContext);
 
-    // Parse and send any WhatsApp messages the AI wants to deliver
+    // ── Parse and create any prescriptions the AI wants to add ──
+    const prescriptionsCreated = [];
+    const rxRegex = /\[CREATE_PRESCRIPTION\](.*?)\[\/CREATE_PRESCRIPTION\]/gs;
+    let rxMatch;
+    while ((rxMatch = rxRegex.exec(aiResponse)) !== null) {
+        try {
+            const rxData = JSON.parse(rxMatch[1].trim());
+            if (!rxData.drugName || !rxData.dosage) continue;
+
+            // Normalise scheduleTimes
+            const validTimes = ['morning', 'afternoon', 'evening'];
+            let scheduleTimes = (rxData.scheduleTimes || []).filter(t => validTimes.includes(t));
+            if (scheduleTimes.length === 0) {
+                const freqLower = (rxData.frequency || '').toLowerCase();
+                if (freqLower.includes('three') || freqLower.includes('thrice')) scheduleTimes = ['morning', 'afternoon', 'evening'];
+                else if (freqLower.includes('twice')) scheduleTimes = ['morning', 'evening'];
+                else scheduleTimes = ['morning'];
+            }
+            const freqLabel = scheduleTimes.length === 3 ? 'Three times daily' : scheduleTimes.length === 2 ? 'Twice daily' : 'Once daily';
+
+            const durationDays = parseInt(rxData.duration) || 30;
+            const prescription = await Prescription.create({
+                patientId,
+                doctor: req.user._id,
+                drugName: rxData.drugName,
+                dosage: rxData.dosage,
+                frequency: rxData.frequency || freqLabel,
+                scheduleTimes,
+                instructions: rxData.instructions || '',
+                startDate: new Date(),
+                endDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000),
+                isActive: true,
+            });
+            prescriptionsCreated.push(prescription);
+            console.log(`[Rx] Created prescription: ${rxData.drugName} ${rxData.dosage} for patient ${patient.name}`);
+        } catch (rxErr) {
+            console.error('[Rx] Failed to parse/create prescription:', rxErr.message);
+        }
+    }
+
+    // ── Send WhatsApp notification for new prescriptions ──
+    if (prescriptionsCreated.length > 0 && patient.phone) {
+        const timeLabels = { morning: '🌅 Morning (8 AM)', afternoon: '☀️ Afternoon (1 PM)', evening: '🌙 Evening (8 PM)' };
+        let rxWaMsg = `🩺 *PostCareAI — New Prescription from Dr. ${patient.assignedDoctor || 'Your Doctor'}*\n\n`;
+        rxWaMsg += `Hello ${patient.name}, your doctor has prescribed new medication(s):\n\n`;
+        prescriptionsCreated.forEach((rx, i) => {
+            rxWaMsg += `💊 *${i + 1}. ${rx.drugName}* — ${rx.dosage}\n`;
+            rxWaMsg += `   📅 ${rx.frequency}\n`;
+            rxWaMsg += `   ⏰ ${rx.scheduleTimes.map(t => timeLabels[t] || t).join(', ')}\n`;
+            if (rx.instructions) rxWaMsg += `   📝 ${rx.instructions}\n`;
+            const endDate = new Date(rx.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+            rxWaMsg += `   📆 Until: ${endDate}\n\n`;
+        });
+        rxWaMsg += `Please take your medications on time. Open your PostCareAI app to see full details. 🙏`;
+
+        sendWhatsApp(patient.phone, rxWaMsg)
+            .then(r => console.log(`[Rx WhatsApp] Notification sent to ${patient.name} (${patient.phone}): ${r.success}`))
+            .catch(e => console.error('[Rx WhatsApp] Send failed:', e.message));
+
+        // Also store the WhatsApp notification as a message
+        await Message.create({
+            patientId,
+            from: 'ai',
+            to: 'patient',
+            content: rxWaMsg,
+            channel: 'whatsapp',
+            isDelivered: true,
+        });
+    }
+
+    // ── Also notify family members via WhatsApp about new prescriptions ──
+    if (prescriptionsCreated.length > 0 && patient.familyMembers?.length > 0) {
+        const drugList = prescriptionsCreated.map(rx => `${rx.drugName} (${rx.dosage})`).join(', ');
+        const familyMsg = `🩺 *PostCareAI — Medication Update*\n\nDr. ${patient.assignedDoctor || 'Doctor'} has prescribed new medication(s) for ${patient.name}: ${drugList}.\n\nPlease ensure they take their medicines on time. 🙏`;
+        for (const fm of patient.familyMembers) {
+            if (fm.phone) {
+                sendWhatsApp(fm.phone, familyMsg)
+                    .then(r => console.log(`[Rx WhatsApp] Family notified: ${fm.name} (${fm.phone}): ${r.success}`))
+                    .catch(e => console.error(`[Rx WhatsApp] Family notify failed (${fm.name}):`, e.message));
+            }
+        }
+    }
+
+    // ── Parse and send any WhatsApp messages the AI wants to deliver ──
     const whatsappSent = [];
     const waRegex = /\[SEND_WHATSAPP\](.*?)\[\/SEND_WHATSAPP\]/gs;
     let match;
@@ -367,8 +466,17 @@ const agentChat = asyncHandler(async (req, res) => {
     }
 
     // Clean the tags from the response shown on dashboard
-    const cleanResponse = aiResponse.replace(/\[SEND_WHATSAPP\].*?\[\/SEND_WHATSAPP\]/gs, '').trim();
-    // If the entire response was just the WhatsApp tag, show a confirmation
+    let cleanResponse = aiResponse
+        .replace(/\[CREATE_PRESCRIPTION\].*?\[\/CREATE_PRESCRIPTION\]/gs, '')
+        .replace(/\[SEND_WHATSAPP\].*?\[\/SEND_WHATSAPP\]/gs, '')
+        .trim();
+
+    // If prescriptions were created, append a summary to the response
+    if (prescriptionsCreated.length > 0 && !cleanResponse) {
+        cleanResponse = `✅ Created ${prescriptionsCreated.length} prescription(s) for ${patient.name} and sent notification via WhatsApp.`;
+    } else if (prescriptionsCreated.length > 0) {
+        cleanResponse += `\n\n✅ **${prescriptionsCreated.length} prescription(s) saved** — Patient app updated & WhatsApp notification sent.`;
+    }
     const displayResponse = cleanResponse || `✅ WhatsApp message sent to ${patient.name}.`;
 
     // Store AI response
@@ -398,6 +506,17 @@ const agentChat = asyncHandler(async (req, res) => {
         data: {
             response: displayResponse,
             whatsappSent: whatsappSent.length > 0 ? whatsappSent.length : 0,
+            prescriptionsCreated: prescriptionsCreated.length,
+            newPrescriptions: prescriptionsCreated.map(rx => ({
+                _id: rx._id,
+                drugName: rx.drugName,
+                dosage: rx.dosage,
+                frequency: rx.frequency,
+                scheduleTimes: rx.scheduleTimes,
+                instructions: rx.instructions,
+                startDate: rx.startDate,
+                endDate: rx.endDate,
+            })),
             patientContext: {
                 name: patient.name,
                 surgeryType: patient.surgeryType,
