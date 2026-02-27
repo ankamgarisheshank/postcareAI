@@ -59,20 +59,20 @@ const PatientFormPage = () => {
     };
 
     const Field = ({ name, label, type = 'text', opts, req, area }) => (
-        <div className={`space-y-1 ${area ? 'sm:col-span-2' : ''}`}>
-            <label className="block text-sm font-semibold text-[var(--text-secondary)]">
-                {label} {req && <span className="text-red-500">*</span>}
+        <div style={{ gridColumn: area ? '1 / -1' : undefined }}>
+            <label className="block text-sm font-semibold text-secondary" style={{ marginBottom: 6 }}>
+                {label} {req && <span style={{ color: '#ef4444' }}>*</span>}
             </label>
             {opts ? (
-                <select {...register(name)} className="input-glow h-12 border-[var(--border)] focus:ring-[var(--primary)]/20 cursor-pointer text-base">
+                <select {...register(name)} className="input-field h-48" style={{ cursor: 'pointer' }}>
                     {opts.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
             ) : area ? (
-                <textarea {...register(name)} rows={4} className="input-glow border-[var(--border)] focus:ring-[var(--primary)]/20 resize-none py-3 text-base" placeholder={`Enter ${label.toLowerCase()}...`} />
+                <textarea {...register(name)} rows={4} className="input-field" placeholder={`Enter ${label.toLowerCase()}...`} style={{ resize: 'none' }} />
             ) : (
-                <input {...register(name)} type={type} className="input-glow h-12 border-[var(--border)] focus:ring-[var(--primary)]/20 text-base" placeholder={`Enter ${label.toLowerCase()}...`} />
+                <input {...register(name)} type={type} className="input-field h-48" placeholder={`Enter ${label.toLowerCase()}...`} />
             )}
-            {errors[name] && <p className="text-red-500 font-medium text-xs mt-1.5 ml-1 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-red-500" /> {errors[name].message}</p>}
+            {errors[name] && <p className="form-error"><span className="form-error-dot" /> {errors[name].message}</p>}
         </div>
     );
 
@@ -80,20 +80,18 @@ const PatientFormPage = () => {
         <div className="max-w-4xl mx-auto space-y-6">
             <Toaster position="top-right" />
             <div className="flex items-center gap-4 mb-2">
-                <button onClick={() => navigate('/patients')} className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--primary)] transition-all">
-                    ←
-                </button>
-                <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                <button onClick={() => navigate('/patients')} className="btn-icon-back">←</button>
+                <h1 className="text-3xl font-extrabold text-primary tracking-tight">
                     {isEdit ? 'Edit Patient Profile' : 'Register New Patient'}
                 </h1>
             </div>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 sm:p-8 border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl shadow-xl rounded-3xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 blur-3xl rounded-full -mr-20 -mt-20 pointer-events-none" />
-                    <h3 className="text-xl font-bold mb-6 text-[var(--text-primary)] relative z-10 flex items-center gap-2">
-                        <span className="text-2xl">👤</span> Basic Information
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card">
+                    <div className="card-glow card-glow-primary" />
+                    <h3 className="text-xl font-bold mb-6 text-primary" style={{ position: 'relative', zIndex: 1 }}>
+                        <span style={{ fontSize: '1.25rem', marginRight: 8 }}>👤</span> Basic Information
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 relative z-10">
+                    <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', position: 'relative', zIndex: 1 }}>
                         <Field name="fullName" label="Full Name" req />
                         <Field name="age" label="Age" type="number" req />
                         <Field name="gender" label="Gender" opts={['Male', 'Female', 'Other']} req />
@@ -101,12 +99,13 @@ const PatientFormPage = () => {
                         <Field name="address" label="Address" area />
                     </div>
                 </motion.div>
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6 sm:p-8 border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl shadow-xl rounded-3xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--accent)]/5 blur-3xl rounded-full -mr-20 -mt-20 pointer-events-none" />
-                    <h3 className="text-xl font-bold mb-6 text-[var(--text-primary)] relative z-10 flex items-center gap-2">
-                        <span className="text-2xl">🏥</span> Medical Information
+
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card">
+                    <div className="card-glow card-glow-accent" />
+                    <h3 className="text-xl font-bold mb-6 text-primary" style={{ position: 'relative', zIndex: 1 }}>
+                        <span style={{ fontSize: '1.25rem', marginRight: 8 }}>🏥</span> Medical Information
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 relative z-10">
+                    <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', position: 'relative', zIndex: 1 }}>
                         <Field name="admissionDate" label="Admission Date" type="date" />
                         <Field name="dischargeDate" label="Discharge Date" type="date" />
                         <Field name="surgeryType" label="Surgery Type" />
@@ -117,19 +116,14 @@ const PatientFormPage = () => {
                         <Field name="treatmentSummary" label="Treatment Summary" area />
                     </div>
                 </motion.div>
-                <div className="flex flex-col sm:flex-row gap-4 justify-end pt-4">
-                    <button type="button" onClick={() => navigate('/patients')} className="px-8 py-3.5 rounded-xl text-[15px] font-bold text-[var(--text-secondary)] bg-[var(--bg-tertiary)] border border-[var(--border)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] transition-all order-2 sm:order-1">
-                        Cancel
-                    </button>
-                    <motion.button type="submit" disabled={isLoading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-8 py-3.5 rounded-xl text-[15px] font-bold text-white bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] shadow-lg shadow-[var(--primary)]/30 hover:shadow-[var(--primary)]/50 transition-all disabled:opacity-70 order-1 sm:order-2 flex justify-center items-center gap-2">
+
+                <div className="flex gap-4 justify-end pt-4" style={{ flexWrap: 'wrap' }}>
+                    <button type="button" onClick={() => navigate('/patients')} className="btn btn-ghost">Cancel</button>
+                    <motion.button type="submit" disabled={isLoading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        className="btn btn-primary">
                         {isLoading ? (
-                            <>
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                {isEdit ? 'Updating Profile...' : 'Adding Patient...'}
-                            </>
-                        ) : (
-                            isEdit ? 'Update Patient Profile' : 'Register Patient'
-                        )}
+                            <><div className="spinner spinner-sm spinner-white" /> {isEdit ? 'Updating...' : 'Adding...'}</>
+                        ) : isEdit ? 'Update Patient Profile' : 'Register Patient'}
                     </motion.button>
                 </div>
             </form>
