@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getPatients, deletePatient } from '../services/patientService';
 import toast, { Toaster } from 'react-hot-toast';
@@ -12,6 +12,7 @@ const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { st
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 const PatientsPage = () => {
+    const navigate = useNavigate();
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -92,7 +93,14 @@ const PatientsPage = () => {
                     className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
                     {filtered.map(patient => (
                         <motion.div key={patient._id} variants={item}>
-                            <Link to={`/patients/${patient._id}`} className="patient-card" style={{ display: 'block', textDecoration: 'none' }}>
+                            <div
+                                className="patient-card"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => navigate(`/patients/${patient._id}`)}
+                                onKeyDown={e => e.key === 'Enter' && navigate(`/patients/${patient._id}`)}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 <div className="card-top-line" />
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="patient-avatar-lg" style={{ width: 44, height: 44, fontSize: 17, borderRadius: 12 }}>
@@ -116,22 +124,22 @@ const PatientsPage = () => {
                                     )}
                                 </div>
 
-                                <div className="flex justify-between items-center" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border-light)' }}>
+                                <div className="flex justify-between items-center" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border-light)' }} onClick={e => e.stopPropagation()}>
                                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                                         {patient.phone || 'No phone'}
                                     </span>
                                     <div className="flex gap-1">
-                                        <Link to={`/patients/edit/${patient._id}`} onClick={e => e.stopPropagation()}
+                                        <Link to={`/patients/edit/${patient._id}`}
                                             style={{ padding: 6, borderRadius: 8, color: 'var(--text-muted)', display: 'flex' }}>
                                             <HiOutlinePencil size={16} />
                                         </Link>
-                                        <button onClick={e => { e.preventDefault(); e.stopPropagation(); handleDelete(patient._id); }}
+                                        <button onClick={e => handleDelete(patient._id)}
                                             style={{ padding: 6, borderRadius: 8, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
                                             <HiOutlineTrash size={16} />
                                         </button>
                                     </div>
                                 </div>
-                            </Link>
+                            </div>
                         </motion.div>
                     ))}
                 </motion.div>
