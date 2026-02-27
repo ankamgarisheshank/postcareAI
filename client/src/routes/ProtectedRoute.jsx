@@ -1,21 +1,22 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = () => {
-    const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, roles = [] }) => {
+    const { user, loading } = useAuth();
+    const location = useLocation();
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
-                <div className="text-center">
-                    <div className="spinner mx-auto mb-4" />
-                    <p className="text-lg font-medium text-secondary">Loading...</p>
-                </div>
+    if (loading) return (
+        <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+            <div className="text-center">
+                <div className="spinner mx-auto mb-4" />
+                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>Loading...</p>
             </div>
-        );
-    }
+        </div>
+    );
 
-    return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+    if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+    if (roles.length > 0 && !roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
+    return children;
 };
 
 export default ProtectedRoute;
