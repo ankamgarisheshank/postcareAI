@@ -145,8 +145,8 @@ const PatientDetailPage = () => {
     const riskBadge = (r) => r === 'High' ? 'badge-danger' : r === 'Medium' ? 'badge-warning' : 'badge-success';
     const moodIcon = (m) => m === 'Good' ? <HiOutlineThumbUp /> : m === 'Critical' ? <HiOutlineThumbDown /> : <HiOutlineMinusCircle />;
     const moodBadge = (m) => m === 'Good' ? 'badge-success' : m === 'Critical' ? 'badge-danger' : 'badge-warning';
-    const severityBadge = (s) => s === 'High' ? 'badge-danger' : s === 'Medium' ? 'badge-warning' : 'badge-info';
-    const severityColor = (s) => s === 'High' ? '#ef4444' : s === 'Medium' ? '#f59e0b' : '#3b82f6';
+    const severityBadge = (s) => { const sv = (s || '').toLowerCase(); return sv === 'high' ? 'badge-danger' : sv === 'medium' ? 'badge-warning' : 'badge-info'; };
+    const severityColor = (s) => { const sv = (s || '').toLowerCase(); return sv === 'high' ? '#ef4444' : sv === 'medium' ? '#f59e0b' : '#3b82f6'; };
 
     return (
         <div className="space-y-6">

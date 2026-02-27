@@ -14,7 +14,8 @@ const AlertsPage = () => {
     const fetchAlerts = async () => {
         try {
             setLoading(true);
-            const { data } = await getAlerts(filter !== 'all' ? filter : undefined);
+            const params = filter === 'unresolved' ? { resolved: 'false' } : filter === 'resolved' ? { resolved: 'true' } : {};
+            const { data } = await getAlerts(params);
             setAlerts(data.data || []);
         } catch { toast.error('Failed to load alerts'); }
         finally { setLoading(false); }
@@ -66,7 +67,7 @@ const AlertsPage = () => {
                             <div className="flex justify-between items-start mb-2" style={{ gap: 12 }}>
                                 <div style={{ flex: 1 }}>
                                     <span className={`badge ${(alert.severity || '').toLowerCase() === 'high' ? 'badge-danger' : (alert.severity || '').toLowerCase() === 'medium' ? 'badge-warning' : 'badge-neutral'}`}>{alert.severity}</span>
-                                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginTop: 8 }}>{alert.patient?.fullName || 'Unknown Patient'}</p>
+                                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginTop: 8 }}>{alert.patient?.fullName || alert.patient?.name || 'Unknown Patient'}</p>
                                     <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{alert.message}</p>
                                 </div>
                                 <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
