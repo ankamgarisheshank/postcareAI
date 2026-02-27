@@ -17,33 +17,43 @@ const registerDoctor = asyncHandler(async (req, res) => {
         throw new Error('Doctor with this email already exists');
     }
 
-    // Create doctor
-    const doctor = await Doctor.create({
-        fullName,
-        email,
-        password,
-        specialization,
-        phone,
-        hospital,
-    });
+    try {
+        // Create doctor
+        const doctor = await Doctor.create({
+            fullName,
+            email,
+            password,
+            specialization,
+            phone,
+            hospital,
+        });
 
-    // Generate token
-    const token = generateToken(doctor._id);
+        // Generate token
+        const token = generateToken(doctor._id);
 
-    res.status(201).json({
-        success: true,
-        data: {
-            _id: doctor._id,
-            fullName: doctor.fullName,
-            email: doctor.email,
-            specialization: doctor.specialization,
-            phone: doctor.phone,
-            hospital: doctor.hospital,
-            role: doctor.role,
-            token,
-        },
-    });
+        res.status(201).json({
+            success: true,
+            data: {
+                _id: doctor._id,
+                fullName: doctor.fullName,
+                email: doctor.email,
+                specialization: doctor.specialization,
+                phone: doctor.phone,
+                hospital: doctor.hospital,
+                role: doctor.role,
+                token,
+            },
+        });
+    } catch (err) {
+        console.error('Registration Error:', err);
+        // Ensure we send a JSON error even if middleware hasn't caught it yet
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, message: err.message });
+        }
+    }
 });
+
+
 
 /**
  * @desc    Login doctor

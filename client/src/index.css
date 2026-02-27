@@ -209,27 +209,43 @@ body {
 }
 
 /* ============ Input Styles ============ */
+.input-group {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
 .input-glow {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
   padding: 12px 16px;
   color: var(--text-primary);
   font-family: 'Poppins', sans-serif;
   font-size: 0.9rem;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
 }
 
 .input-glow:focus {
   outline: none;
+  background: rgba(255, 255, 255, 0.07);
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15),
+    inset 0 0 10px rgba(99, 102, 241, 0.05);
+  transform: translateY(-1px);
 }
 
 .input-glow::placeholder {
   color: var(--text-muted);
+  opacity: 0.6;
 }
+
+.input-group:focus-within label {
+  color: var(--primary) !important;
+  transform: translateX(4px);
+}
+
 
 /* ============ Animations ============ */
 @keyframes float {

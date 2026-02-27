@@ -123,9 +123,11 @@ const LoginPage = () => {
                                 <input
                                     {...register('password')}
                                     type={showPassword ? 'text' : 'password'}
+                                    autoComplete="current-password"
                                     placeholder="Enter your password"
                                     className="input-glow pl-11 pr-11 hover-glow"
                                 />
+
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}

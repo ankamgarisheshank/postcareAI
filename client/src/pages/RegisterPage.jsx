@@ -132,8 +132,9 @@ const RegisterPage = () => {
                                     <input
                                         {...register('password')}
                                         type={showPassword ? 'text' : 'password'}
+                                        autoComplete="new-password"
                                         placeholder="Min 6 characters"
-                                        className="input-glow pl-11 pr-11"
+                                        className="input-glow pl-11 pr-11 hover-glow"
                                     />
                                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2">
                                         {showPassword ? <HiOutlineEyeOff size={18} style={{ color: 'var(--text-muted)' }} /> : <HiOutlineEye size={18} style={{ color: 'var(--text-muted)' }} />}
@@ -150,12 +151,14 @@ const RegisterPage = () => {
                                     <input
                                         {...register('confirmPassword')}
                                         type={showPassword ? 'text' : 'password'}
+                                        autoComplete="new-password"
                                         placeholder="Repeat password"
-                                        className="input-glow pl-11"
+                                        className="input-glow pl-11 hover-glow"
                                     />
                                 </div>
                                 {errors.confirmPassword && <p className="text-red-400 text-xs mt-1">{errors.confirmPassword.message}</p>}
                             </div>
+
                         </div>
 
                         <motion.button
@@ -189,3 +192,6 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
+
+
+
