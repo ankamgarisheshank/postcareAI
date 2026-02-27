@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { getPatients } from '../services/patientService';
-import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import toast from 'react-hot-toast';
-import { HiOutlineExternalLink, HiOutlineLocationMarker, HiUser } from 'react-icons/hi';
+import { HiOutlineExternalLink, HiOutlineLocationMarker, HiUser, HiOutlineMap, HiOutlineHeart } from 'react-icons/hi';
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, shadowUrl: markerShadow });
 
@@ -20,72 +17,77 @@ const PatientMapPage = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getPatients({ limit: 500 })
-            .then(res => setPatients(res.data.data))
-            .catch(() => toast.error('Failed to load patients for map'))
+        getPatients()
+            .then(({ data }) => setPatients((data.data || []).filter(p => p.location?.coordinates?.length === 2)))
+            .catch(() => toast.error('Failed to load patients'))
             .finally(() => setLoading(false));
     }, []);
 
-    const mappedPatients = patients.filter(p => p.location && p.location.lat && p.location.lng);
-    const defaultCenter = mappedPatients.length > 0
-        ? [mappedPatients[0].location.lat, mappedPatients[0].location.lng]
-        : [20.5937, 78.9629];
-
-    if (loading) return (
-        <div className="flex items-center justify-center" style={{ height: 260 }}>
-            <div className="spinner" />
-        </div>
-    );
+    const center = patients.length > 0
+        ? [patients[0].location.coordinates[1], patients[0].location.coordinates[0]]
+        : [17.385, 78.4867];
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto">
-            <div className="flex items-center justify-between gap-4" style={{ flexWrap: 'wrap' }}>
+            <div className="flex items-center justify-between" style={{ flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                    <h1 className="text-3xl font-extrabold text-primary tracking-tight">🗺️ Patient Geographic Map</h1>
-                    <p className="text-sm font-medium text-muted mt-1">Visualize patient distribution and locate critical cases instantly</p>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+                        Patient Map
+                    </h1>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Visualize patient distribution and locate critical cases</p>
                 </div>
-                <div className="badge badge-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
-                    Showing <strong style={{ marginLeft: 4, marginRight: 4 }}>{mappedPatients.length}</strong> / {patients.length} active locations
-                </div>
+                <span className="badge badge-accent" style={{ padding: '8px 18px', fontSize: 13, fontWeight: 700 }}>
+                    <HiOutlineLocationMarker size={16} /> {patients.length} Located
+                </span>
             </div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card map-container" style={{ padding: 8 }}>
-                <MapContainer center={defaultCenter} zoom={5} style={{ height: '100%', width: '100%', borderRadius: 16, zIndex: 0 }}>
-                    <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    {mappedPatients.map(patient => (
-                        <Marker key={patient._id} position={[patient.location.lat, patient.location.lng]}>
-                            <Popup>
-                                <div className="popup-card">
-                                    <h3><HiUser style={{ color: '#FFFFFF' }} /> {patient.fullName}</h3>
-                                    <div className="flex items-center gap-2 mt-3 mb-2">
-                                        <span className={`badge ${patient.status === 'Active' ? 'badge-success' : patient.status === 'Critical' ? 'badge-danger' : patient.status === 'Recovered' ? 'badge-info' : 'badge-warning'}`}>
-                                            {patient.status}
-                                        </span>
-                                        <span className={`badge ${patient.riskLevel === 'High' ? 'badge-danger' : patient.riskLevel === 'Medium' ? 'badge-warning' : 'badge-success'}`}>
-                                            {patient.riskLevel} Risk
-                                        </span>
+            {loading ? (
+                <div className="loading-shimmer" style={{ height: 500, borderRadius: 16 }} />
+            ) : (
+                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <MapContainer center={center} zoom={12} style={{ height: 500, width: '100%', borderRadius: 16 }}>
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSL</a>'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        {patients.map(patient => (
+                            <Marker key={patient._id} position={[patient.location.coordinates[1], patient.location.coordinates[0]]}>
+                                <Popup>
+                                    <div style={{ fontFamily: 'Inter', minWidth: 200 }}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#C8FF00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#111' }}>
+                                                {(patient.fullName || 'U').charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>{patient.fullName}</p>
+                                                <span style={{
+                                                    fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100,
+                                                    background: patient.riskLevel === 'High' ? 'rgba(239,68,68,0.1)' : patient.riskLevel === 'Medium' ? 'rgba(245,158,11,0.1)' : 'rgba(34,197,94,0.1)',
+                                                    color: patient.riskLevel === 'High' ? '#dc2626' : patient.riskLevel === 'Medium' ? '#d97706' : '#16a34a',
+                                                }}>{patient.riskLevel} Risk</span>
+                                            </div>
+                                        </div>
+                                        <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginTop: 8 }}>
+                                            {patient.diagnosis || 'No Diagnosis'}
+                                        </p>
+                                        <p style={{ fontSize: 12, color: '#888', marginTop: 4, display: 'flex', gap: 4, alignItems: 'flex-start' }}>
+                                            <HiOutlineLocationMarker size={14} style={{ marginTop: 2, flexShrink: 0 }} />
+                                            {patient.address || 'No address'}
+                                        </p>
+                                        <a href={`/patients/${patient._id}`} style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                                            marginTop: 10, fontSize: 12, fontWeight: 600,
+                                            color: '#111', textDecoration: 'underline',
+                                        }}>
+                                            View Profile <HiOutlineExternalLink size={14} />
+                                        </a>
                                     </div>
-                                    <p className="text-sm font-bold" style={{ color: '#334155', marginTop: 8 }}>
-                                        ⚕️ {patient.diagnosis || 'No Diagnosis'}
-                                    </p>
-                                    <p className="text-xs text-muted" style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                                        <HiOutlineLocationMarker size={14} style={{ marginTop: 2, flexShrink: 0 }} />
-                                        <span className="line-clamp-2">{patient.location.formattedAddress || patient.address}</span>
-                                    </p>
-                                    <Link to={`/patients/${patient._id}`}>
-                                        <button className="popup-btn flex items-center justify-center gap-1">
-                                            View Patient Profile <HiOutlineExternalLink size={14} />
-                                        </button>
-                                    </Link>
-                                </div>
-                            </Popup>
-                        </Marker>
-                    ))}
-                </MapContainer>
-            </motion.div>
+                                </Popup>
+                            </Marker>
+                        ))}
+                    </MapContainer>
+                </div>
+            )}
         </div>
     );
 };

@@ -2,13 +2,11 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import {
     HiOutlineHome, HiOutlineUsers, HiOutlineUserAdd,
     HiOutlineBell, HiOutlineChartBar, HiOutlineLogout,
     HiOutlineMenu, HiOutlineMap, HiOutlineX,
-    HiOutlineSun, HiOutlineMoon, HiOutlineHeart,
-    HiOutlineChatAlt2,
+    HiOutlineHeart, HiOutlineChatAlt2, HiOutlineSearch,
 } from 'react-icons/hi';
 
 const doctorLinks = [
@@ -31,117 +29,99 @@ const patientLinks = [
 
 const DashboardLayout = () => {
     const { user, isDoctor, logout } = useAuth();
-    const { isDark, toggleTheme } = useTheme();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const handleLogout = () => { logout(); navigate('/login'); };
     const sidebarLinks = isDoctor ? doctorLinks : patientLinks;
     const displayName = user?.fullName || user?.name || (isDoctor ? 'Doctor' : 'Patient');
+    const initials = displayName.charAt(0).toUpperCase();
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
 
     return (
-        <div className="flex" style={{ minHeight: '100vh' }}>
+        <div className="app-layout">
             {/* Mobile overlay */}
             <AnimatePresence>
                 {sidebarOpen && (
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="mobile-overlay lg-hide"
+                        className="mobile-overlay show"
                         onClick={() => setSidebarOpen(false)}
                     />
                 )}
             </AnimatePresence>
 
-            {/* Sidebar */}
-            <aside className={`sidebar ${sidebarOpen ? '' : 'closed'}`} style={{ zIndex: 50 }}>
+            {/* Sidebar — icon only on desktop, full on mobile */}
+            <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
                 {/* Logo */}
-                <div className="flex items-center justify-between p-6">
-                    <div className="flex items-center gap-3">
-                        <div className="gradient-primary flex items-center justify-center" style={{ width: 40, height: 40, borderRadius: 12 }}>
-                            <span className="text-white font-bold text-lg">P</span>
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-bold text-primary tracking-tight">PostCare</h1>
-                            <span className="text-xs font-bold text-c-primary uppercase tracking-wider">AI Agent</span>
-                        </div>
-                    </div>
-                    <button onClick={() => setSidebarOpen(false)} className="lg-hide" style={{ padding: 8, borderRadius: 8, background: 'none', border: 'none', cursor: 'pointer' }}>
-                        <HiOutlineX size={22} style={{ color: 'var(--text-secondary)' }} />
-                    </button>
+                <div className="sidebar-logo" onClick={() => navigate(isDoctor ? '/dashboard' : '/my-recovery')}>
+                    <span>P</span>
                 </div>
 
-                {/* Navigation */}
-                <nav style={{ flex: 1, padding: '0 16px', overflowY: 'auto' }} className="space-y-1">
+                {/* Nav Links */}
+                <nav className="sidebar-nav">
                     {sidebarLinks.map((link) => (
-                        <NavLink key={link.path} to={link.path} onClick={() => setSidebarOpen(false)}
-                            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
-                            <link.icon size={20} />
-                            <span>{link.label}</span>
+                        <NavLink
+                            key={link.path}
+                            to={link.path}
+                            onClick={() => setSidebarOpen(false)}
+                            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                        >
+                            <link.icon size={22} />
+                            <span className="link-tooltip">{link.label}</span>
+                            <span className="link-label">{link.label}</span>
                         </NavLink>
                     ))}
                 </nav>
 
-                {/* Bottom section */}
-                <div className="space-y-3" style={{ padding: 20, borderTop: '1px solid var(--border)' }}>
-                    <button onClick={toggleTheme} className="sidebar-link">
-                        {isDark ? <HiOutlineSun size={20} /> : <HiOutlineMoon size={20} />}
-                        <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
-                    </button>
-
-                    <div className="doctor-info">
-                        <div className="flex items-center gap-3">
-                            <div className="doctor-avatar">
-                                <span>{displayName.charAt(0)}</span>
-                            </div>
-                            <div className="min-w-0" style={{ flex: 1 }}>
-                                <p className="text-sm font-bold truncate text-primary">
-                                    {isDoctor ? (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`) : displayName}
-                                </p>
-                                <p className="text-xs font-medium truncate text-muted">
-                                    {isDoctor ? (user?.specialization || 'General') : 'Patient'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button onClick={handleLogout} className="sidebar-link" style={{ color: '#ef4444' }}>
-                        <HiOutlineLogout size={20} />
-                        <span>Logout</span>
+                {/* Bottom */}
+                <div className="sidebar-bottom">
+                    <button onClick={handleLogout} className="sidebar-link" title="Logout">
+                        <HiOutlineLogout size={22} />
+                        <span className="link-tooltip">Logout</span>
+                        <span className="link-label">Logout</span>
                     </button>
                 </div>
             </aside>
 
-            {/* Main content */}
-            <div className="flex flex-col min-w-0" style={{ flex: 1 }}>
+            {/* Main Area */}
+            <div className="main-content">
                 {/* Top Bar */}
                 <header className="topbar">
-                    <button onClick={() => setSidebarOpen(true)} className="lg-hide"
-                        style={{ padding: 8, borderRadius: 8, background: 'none', border: 'none', cursor: 'pointer' }}>
-                        <HiOutlineMenu size={24} style={{ color: 'var(--text-primary)' }} />
-                    </button>
-
-                    <div className="lg-show">
-                        <p className="text-sm font-medium text-muted">
-                            Welcome back, <span className="text-primary font-semibold">
-                                {isDoctor ? (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`) : displayName}
-                            </span>
-                        </p>
+                    <div className="topbar-left">
+                        <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
+                            <HiOutlineMenu size={22} />
+                        </button>
+                        <div className="topbar-greeting hide-mobile">
+                            <h1>
+                                Hi {isDoctor ? (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`) : displayName},
+                            </h1>
+                            <p>Welcome to PostCare AI</p>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <NavLink to="/alerts" className="notification-btn">
-                            <HiOutlineBell size={22} style={{ color: 'var(--text-primary)' }} />
-                            <span className="notification-dot">!</span>
+                    <div className="topbar-right">
+                        <div className="hide-mobile" style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginRight: 4 }}>
+                            {dateStr}
+                        </div>
+                        <NavLink to="/alerts" className="topbar-btn" title="Alerts">
+                            <HiOutlineBell size={20} />
+                            <span className="topbar-badge">!</span>
                         </NavLink>
+                        <div className="topbar-avatar" title={displayName}>
+                            {initials}
+                        </div>
                     </div>
                 </header>
 
-                {/* Page content */}
+                {/* Page */}
                 <main className="page-content">
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, ease: 'easeOut' }}
                     >
                         <Outlet />
                     </motion.div>

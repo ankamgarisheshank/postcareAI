@@ -1,259 +1,148 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getPatients, deletePatient } from '../services/patientService';
 import toast, { Toaster } from 'react-hot-toast';
 import {
-    HiOutlineSearch, HiOutlinePlus, HiOutlineTrash, HiOutlineEye,
-    HiOutlinePencil, HiOutlineFilter, HiOutlineViewGrid, HiOutlineViewList,
+    HiOutlineSearch, HiOutlinePlus, HiOutlineTrash,
+    HiOutlineExternalLink, HiOutlinePencil, HiOutlineFilter,
 } from 'react-icons/hi';
 
-const getStatusBadge = (s) => s === 'Active' ? 'badge-success' : s === 'Critical' ? 'badge-danger' : s === 'Recovered' ? 'badge-info' : 'badge-warning';
-const getRiskBadge = (r) => r === 'High' ? 'badge-danger' : r === 'Medium' ? 'badge-warning' : 'badge-success';
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } };
+const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 const PatientsPage = () => {
+    const navigate = useNavigate();
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
-    const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-    const [viewMode, setViewMode] = useState('table'); // 'cards' or 'table' - table shows all data
+    const [statusFilter, setStatusFilter] = useState('All');
 
-    useEffect(() => {
-        fetchPatients();
-    }, [search, statusFilter, pagination.page, viewMode]);
-
+    useEffect(() => { fetchPatients(); }, []);
     const fetchPatients = async () => {
-        try {
-            setLoading(true);
-            const params = { page: pagination.page, limit: viewMode === 'table' ? 25 : 12 };
-            if (search) params.search = search;
-            if (statusFilter) params.status = statusFilter;
-            const { data } = await getPatients(params);
-            setPatients(data.data);
-            setPagination(data.pagination);
-        } catch { toast.error('Failed to load patients'); }
+        try { const { data } = await getPatients(); setPatients(data.data || []); }
+        catch { toast.error('Failed to load patients'); }
         finally { setLoading(false); }
     };
 
-    const handleDelete = async (id, name) => {
-        if (!confirm(`Delete patient "${name}"? This cannot be undone.`)) return;
-        try { await deletePatient(id); toast.success('Patient deleted'); fetchPatients(); }
-        catch { toast.error('Failed to delete patient'); }
+    const handleDelete = async (id) => {
+        if (!window.confirm('Delete this patient?')) return;
+        try { await deletePatient(id); setPatients(prev => prev.filter(p => p._id !== id)); toast.success('Deleted'); }
+        catch { toast.error('Failed to delete'); }
     };
+
+    const filtered = patients.filter(p => {
+        const matchSearch = (p.fullName || p.name || '').toLowerCase().includes(search.toLowerCase()) ||
+            (p.diagnosis || '').toLowerCase().includes(search.toLowerCase()) ||
+            (p.phone || '').includes(search);
+        const matchStatus = statusFilter === 'All' || p.status === statusFilter;
+        return matchSearch && matchStatus;
+    });
+
+    const statusBadge = (s) => s === 'Active' ? 'badge-success' : s === 'Critical' ? 'badge-danger' : s === 'Recovered' ? 'badge-info' : 'badge-warning';
+    const riskBadge = (r) => r === 'High' ? 'badge-danger' : r === 'Medium' ? 'badge-warning' : 'badge-success';
+
+    if (loading) return (
+        <div className="space-y-5">
+            <div className="loading-shimmer" style={{ height: 60, borderRadius: 16 }} />
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="loading-shimmer" style={{ height: 160, borderRadius: 16 }} />)}
+            </div>
+        </div>
+    );
 
     return (
         <div className="space-y-6">
             <Toaster position="top-right" />
 
             {/* Header */}
-            <div className="flex items-center justify-between gap-4 mb-4" style={{ flexWrap: 'wrap' }}>
+            <div className="flex items-center justify-between" style={{ flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                    <h1 className="text-3xl font-extrabold text-primary tracking-tight">Patient Directory</h1>
-                    <p className="text-sm font-medium text-muted mt-1">
-                        Manage and monitor your active patients ({pagination.total} total)
-                    </p>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>Patients</h1>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{patients.length} total patients registered</p>
                 </div>
-                <Link to="/patients/add">
-                    <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                        className="btn btn-primary flex items-center gap-2">
-                        <HiOutlinePlus size={18} /> Add Patient
-                    </motion.button>
+                <Link to="/patients/add" className="btn btn-primary btn-pill">
+                    <HiOutlinePlus size={18} /> Add Patient
                 </Link>
             </div>
 
-            {/* Search & Filters */}
-            <div className="card" style={{ padding: 20 }}>
-                <div className="flex gap-4" style={{ flexWrap: 'wrap' }}>
-                    <div className="search-bar">
-                        <HiOutlineSearch className="search-icon" size={20} />
-                        <input type="text" placeholder="Search patients by name, diagnosis, phone..."
-                            value={search} onChange={e => setSearch(e.target.value)} />
-                    </div>
-                    <div className="filter-select">
-                        <HiOutlineFilter className="filter-icon" size={20} />
-                        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                            <option value="">All Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Critical">Critical</option>
-                            <option value="Discharged">Discharged</option>
-                            <option value="Recovered">Recovered</option>
-                        </select>
-                        <div className="chevron">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </div>
-                    </div>
-                    <div className="flex gap-1">
-                        <button
-                            onClick={() => setViewMode('table')}
-                            className={`p-2.5 rounded-xl transition-colors ${viewMode === 'table' ? 'gradient-primary text-white' : ''}`}
-                            style={viewMode !== 'table' ? { background: 'var(--bg-tertiary)', color: 'var(--text-muted)' } : {}}
-                            title="Table view - all data"
-                        >
-                            <HiOutlineViewList size={20} />
+            {/* Search + Filter */}
+            <div className="flex gap-3" style={{ flexWrap: 'wrap' }}>
+                <div className="search-bar" style={{ flex: 1, minWidth: 250 }}>
+                    <HiOutlineSearch size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    <input placeholder="Search patients by name, diagnosis, phone..." value={search} onChange={e => setSearch(e.target.value)} />
+                </div>
+                <div className="tabs-container">
+                    {['All', 'Active', 'Critical', 'Recovered'].map(f => (
+                        <button key={f} onClick={() => setStatusFilter(f)} className={`tab-btn ${statusFilter === f ? 'active' : ''}`}>
+                            {f}
                         </button>
-                        <button
-                            onClick={() => setViewMode('cards')}
-                            className={`p-2.5 rounded-xl transition-colors ${viewMode === 'cards' ? 'gradient-primary text-white' : ''}`}
-                            style={viewMode !== 'cards' ? { background: 'var(--bg-tertiary)', color: 'var(--text-muted)' } : {}}
-                            title="Card view"
-                        >
-                            <HiOutlineViewGrid size={20} />
-                        </button>
-                    </div>
+                    ))}
                 </div>
             </div>
 
             {/* Patient Grid */}
-            {loading ? (
-                <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-                    {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="loading-shimmer" style={{ height: 200, borderRadius: 20 }} />)}
+            {filtered.length === 0 ? (
+                <div className="empty-state">
+                    <div className="empty-state-icon"><HiOutlineSearch size={28} style={{ color: 'var(--text-muted)' }} /></div>
+                    <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>No patients found</h3>
+                    <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Try adjusting your search or filters</p>
                 </div>
-            ) : viewMode === 'table' && patients.length > 0 ? (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="glass-card overflow-x-auto"
-                >
-                    <table className="w-full min-w-[900px]" style={{ color: 'var(--text-primary)' }}>
-                        <thead>
-                            <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Patient</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Age / Gender</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Phone</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Address</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Admission</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Discharge</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Operation</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Surgery</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Diagnosis</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Treatment</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Status</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Risk</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Recovery</th>
-                                <th className="text-left py-4 px-4 text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {patients.map((patient) => (
-                                <tr key={patient._id} className="table-row border-b" style={{ borderColor: 'var(--border)' }}>
-                                    <td className="py-3 px-4">
-                                        <Link to={`/patients/${patient._id}`} className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>
-                                            {patient.fullName}
-                                        </Link>
-                                    </td>
-                                    <td className="py-3 px-4 text-sm">{patient.age} / {patient.gender}</td>
-                                    <td className="py-3 px-4 text-sm">{patient.phone || 'N/A'}</td>
-                                    <td className="py-3 px-4 text-sm max-w-[180px] truncate" title={patient.address}>{patient.address || 'N/A'}</td>
-                                    <td className="py-3 px-4 text-sm">{patient.admissionDate ? new Date(patient.admissionDate).toLocaleDateString() : 'N/A'}</td>
-                                    <td className="py-3 px-4 text-sm">{patient.dischargeDate ? new Date(patient.dischargeDate).toLocaleDateString() : 'N/A'}</td>
-                                    <td className="py-3 px-4 text-sm">{patient.operationDate ? new Date(patient.operationDate).toLocaleDateString() : 'N/A'}</td>
-                                    <td className="py-3 px-4 text-sm">{patient.surgeryType || 'N/A'}</td>
-                                    <td className="py-3 px-4 text-sm max-w-[150px] truncate" title={patient.diagnosis}>{patient.diagnosis || 'N/A'}</td>
-                                    <td className="py-3 px-4 text-sm max-w-[150px] truncate" title={patient.treatmentSummary}>{patient.treatmentSummary || 'N/A'}</td>
-                                    <td className="py-3 px-4"><span className={`badge ${getStatusBadge(patient.status)}`}>{patient.status}</span></td>
-                                    <td className="py-3 px-4"><span className={`badge ${getRiskBadge(patient.riskLevel)}`}>{patient.riskLevel}</span></td>
-                                    <td className="py-3 px-4 text-sm font-medium" style={{ color: 'var(--primary)' }}>{patient.recoveryScore || 0}%</td>
-                                    <td className="py-3 px-4">
-                                        <div className="flex gap-1">
-                                            <Link to={`/patients/${patient._id}`}>
-                                                <button className="p-1.5 rounded-lg" style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'var(--primary)' }} title="View"><HiOutlineEye size={16} /></button>
-                                            </Link>
-                                            <Link to={`/patients/edit/${patient._id}`}>
-                                                <button className="p-1.5 rounded-lg" style={{ background: 'rgba(82, 82, 82, 0.1)', color: 'var(--text-secondary)' }} title="Edit"><HiOutlinePencil size={16} /></button>
-                                            </Link>
-                                            <button onClick={() => handleDelete(patient._id, patient.fullName)} className="p-1.5 rounded-lg" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }} title="Delete"><HiOutlineTrash size={16} /></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </motion.div>
-            ) : patients.length === 0 ? (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="empty-state">
-                    <div className="empty-state-icon"><HiOutlineSearch size={40} style={{ color: 'var(--text-muted)' }} /></div>
-                    <h3 className="text-2xl font-bold mb-3 text-primary">No patients found</h3>
-                    <p className="text-muted font-medium" style={{ maxWidth: 400, margin: '0 auto' }}>
-                        {search || statusFilter ? 'Try adjusting your search criteria or resetting the filters manually.' : 'You have not added any patients yet. Click "Add Patient" to get started.'}
-                    </p>
-                </motion.div>
             ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-                    {patients.map((patient, index) => (
-                        <motion.div key={patient._id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }} className="patient-card">
-                            <div className="card-top-line" />
-
-                            <div className="flex items-start justify-between mb-5">
-                                <div className="flex items-center gap-4">
-                                    <div className="patient-avatar"><span>{patient.fullName?.charAt(0)}</span></div>
-                                    <div>
-                                        <h3 className="font-bold text-base text-primary">{patient.fullName}</h3>
-                                        <p className="text-xs font-semibold text-muted" style={{ marginTop: 2 }}>{patient.age} yrs • {patient.gender}</p>
+                <motion.div variants={container} initial="hidden" animate="show"
+                    className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                    {filtered.map(patient => (
+                        <motion.div key={patient._id} variants={item}>
+                            <div
+                                className="patient-card"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => navigate(`/patients/${patient._id}`)}
+                                onKeyDown={e => e.key === 'Enter' && navigate(`/patients/${patient._id}`)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <div className="card-top-line" />
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="patient-avatar-lg" style={{ width: 44, height: 44, fontSize: 17, borderRadius: 12 }}>
+                                        {(patient.fullName || patient.name || '?').charAt(0)}
+                                    </div>
+                                    <div className="min-w-0" style={{ flex: 1 }}>
+                                        <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }} className="truncate">{patient.fullName || patient.name}</p>
+                                        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{patient.age} yrs • {patient.gender}</p>
                                     </div>
                                 </div>
-                                <span className={`badge ${patient.riskLevel === 'High' ? 'badge-danger' : patient.riskLevel === 'Medium' ? 'badge-warning' : 'badge-success'}`}>
-                                    {patient.riskLevel}
-                                </span>
-                            </div>
 
-                            <div className="space-y-3" style={{ flex: 1, marginBottom: 24 }}>
-                                <div className="info-row">
-                                    <span className="info-label">Diagnosis</span>
-                                    <span className="info-value truncate ml-2">{patient.diagnosis || 'N/A'}</span>
+                                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }} className="truncate">
+                                    {patient.diagnosis || patient.surgeryType || 'No diagnosis'}
+                                </p>
+
+                                <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
+                                    <span className={`badge ${statusBadge(patient.status)}`}>{patient.status || 'Active'}</span>
+                                    {patient.riskLevel && <span className={`badge ${riskBadge(patient.riskLevel)}`}>{patient.riskLevel} Risk</span>}
+                                    {patient.recoveryScore != null && (
+                                        <span className="badge badge-neutral">Recovery: {patient.recoveryScore}%</span>
+                                    )}
                                 </div>
-                                <div className="info-row">
-                                    <span className="info-label">Surgery</span>
-                                    <span className="info-value truncate ml-2">{patient.surgeryType || 'N/A'}</span>
-                                </div>
-                                <div className="info-row pb-3 border-b">
-                                    <span className="info-label">Status</span>
-                                    <span className={`badge ${patient.status === 'Active' ? 'badge-success' : patient.status === 'Critical' ? 'badge-danger' : patient.status === 'Recovered' ? 'badge-info' : 'badge-warning'}`}>
-                                        {patient.status}
+
+                                <div className="flex justify-between items-center" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border-light)' }} onClick={e => e.stopPropagation()}>
+                                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                                        {patient.phone || 'No phone'}
                                     </span>
-                                </div>
-                                {/* Recovery */}
-                                <div className="pt-1">
-                                    <div className="flex items-end justify-between text-sm mb-2">
-                                        <span className="text-muted font-medium">Recovery Phase</span>
-                                        <span className="text-c-primary font-black text-lg">{patient.recoveryScore || 0}%</span>
+                                    <div className="flex gap-1">
+                                        <Link to={`/patients/edit/${patient._id}`}
+                                            style={{ padding: 6, borderRadius: 8, color: 'var(--text-muted)', display: 'flex' }}>
+                                            <HiOutlinePencil size={16} />
+                                        </Link>
+                                        <button onClick={e => handleDelete(patient._id)}
+                                            style={{ padding: 6, borderRadius: 8, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
+                                            <HiOutlineTrash size={16} />
+                                        </button>
                                     </div>
-                                    <div className="recovery-bar-track">
-                                        <div className="recovery-bar-fill" style={{ width: `${patient.recoveryScore || 0}%` }} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-3" style={{ marginTop: 'auto' }}>
-                                <Link to={`/patients/${patient._id}`} style={{ flex: 1 }}>
-                                    <button className="btn-track"><HiOutlineEye size={16} /> Track Patient</button>
-                                </Link>
-                                <div className="flex gap-2">
-                                    <Link to={`/patients/edit/${patient._id}`}>
-                                        <button className="btn-icon btn-icon-edit"><HiOutlinePencil size={18} /></button>
-                                    </Link>
-                                    <button onClick={() => handleDelete(patient._id, patient.fullName)}
-                                        className="btn-icon btn-icon-delete"><HiOutlineTrash size={18} /></button>
                                 </div>
                             </div>
                         </motion.div>
                     ))}
                 </motion.div>
-            )}
-
-            {/* Pagination */}
-            {pagination.pages > 1 && (
-                <div className="pagination">
-                    {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(page => (
-                        <button key={page} onClick={() => setPagination(p => ({ ...p, page }))}
-                            className={`page-btn ${pagination.page === page ? 'active' : ''}`}>
-                            {page}
-                        </button>
-                    ))}
-                </div>
             )}
         </div>
     );

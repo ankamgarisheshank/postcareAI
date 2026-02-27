@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getAlerts, resolveAlert } from '../services/patientService';
 import toast, { Toaster } from 'react-hot-toast';
-import { HiOutlineCheck, HiOutlineExclamation } from 'react-icons/hi';
+import { HiOutlineCheck, HiOutlineExclamation, HiOutlineBell, HiOutlineCheckCircle } from 'react-icons/hi';
 
 const AlertsPage = () => {
     const [alerts, setAlerts] = useState([]);
@@ -14,83 +14,75 @@ const AlertsPage = () => {
     const fetchAlerts = async () => {
         try {
             setLoading(true);
-            const params = {};
-            if (filter === 'unresolved') params.resolved = false;
-            else if (filter === 'resolved') params.resolved = true;
-            const { data } = await getAlerts(params);
-            setAlerts(data.data);
+            const { data } = await getAlerts(filter !== 'all' ? filter : undefined);
+            setAlerts(data.data || []);
         } catch { toast.error('Failed to load alerts'); }
         finally { setLoading(false); }
     };
 
-    const handleResolve = async (alertId) => {
-        try { await resolveAlert(alertId); toast.success('Alert resolved'); fetchAlerts(); }
+    const handleResolve = async (id) => {
+        try { await resolveAlert(id); toast.success('Alert resolved'); fetchAlerts(); }
         catch { toast.error('Failed to resolve'); }
     };
 
-    const severityColor = (s) => { const sv = (s || '').toLowerCase(); return sv === 'high' ? '#ef4444' : sv === 'medium' ? '#f59e0b' : '#A3A3A3'; };
+    const severityColor = (s) => { const sv = (s || '').toLowerCase(); return sv === 'high' ? '#ef4444' : sv === 'medium' ? '#f59e0b' : '#999'; };
 
     return (
         <div className="space-y-6">
             <Toaster position="top-right" />
-            <div>
-                <h1 className="text-3xl font-extrabold text-primary tracking-tight">🚨 Critical Alerts</h1>
-                <p className="text-sm font-medium text-muted mt-1">Monitor and resolve patient alerts in real-time</p>
+
+            <div className="flex items-center justify-between" style={{ flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+                        Critical Alerts
+                    </h1>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Monitor and resolve patient alerts in real-time</p>
+                </div>
+                <div className="tabs-container">
+                    {['unresolved', 'resolved', 'all'].map(f => (
+                        <button key={f} onClick={() => setFilter(f)} className={`tab-btn ${filter === f ? 'active' : ''}`}>
+                            {f}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Filter Tabs */}
-            <div className="tabs-container" style={{ width: 'fit-content' }}>
-                {['unresolved', 'resolved', 'all'].map(f => (
-                    <button key={f} onClick={() => setFilter(f)} className={`tab-btn ${filter === f ? 'active' : ''}`}>
-                        {f}
-                    </button>
-                ))}
-            </div>
-
-            {/* Alert List */}
             {loading ? (
-                <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="loading-shimmer" style={{ height: 96, borderRadius: 16 }} />)}</div>
+                <div className="space-y-4">
+                    {[1, 2, 3].map(i => <div key={i} className="loading-shimmer" style={{ height: 100, borderRadius: 16 }} />)}
+                </div>
             ) : alerts.length === 0 ? (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="empty-state">
-                    <div className="empty-state-icon"><HiOutlineExclamation size={48} style={{ color: 'var(--text-muted)' }} /></div>
-                    <h3 className="text-2xl font-bold mb-3 text-primary">No alerts</h3>
-                    <p className="text-muted font-medium" style={{ maxWidth: 400, margin: '0 auto' }}>All clear! No {filter} alerts found at the moment.</p>
-                </motion.div>
+                <div className="empty-state">
+                    <div className="empty-state-icon"><HiOutlineCheckCircle size={28} style={{ color: 'var(--success)' }} /></div>
+                    <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>No Alerts</h3>
+                    <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>All clear — no {filter} alerts found</p>
+                </div>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {alerts.map((alert, i) => (
-                        <motion.div key={alert._id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.05 }} className="card flex gap-5" style={{ padding: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-                            {/* Left color bar */}
-                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, borderRadius: '24px 0 0 24px', backgroundColor: severityColor(alert.severity) }} />
-
-                            <div style={{ flex: 1, paddingLeft: 8 }}>
-                                <div className="flex items-center gap-3 mb-2">
-                                    <span className={`badge ${(alert.severity || '').toLowerCase() === 'high' ? 'badge-danger' : (alert.severity || '').toLowerCase() === 'medium' ? 'badge-warning' : 'badge-info'}`}>
-                                        {alert.severity}
-                                    </span>
-                                    <span className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-                                        {alert.type || 'symptom'}
-                                    </span>
+                        <motion.div key={alert._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.04 }}
+                            className="card" style={{ borderLeft: `4px solid ${severityColor(alert.severity)}`, padding: 20 }}>
+                            <div className="flex justify-between items-start mb-2" style={{ gap: 12 }}>
+                                <div style={{ flex: 1 }}>
+                                    <span className={`badge ${(alert.severity || '').toLowerCase() === 'high' ? 'badge-danger' : (alert.severity || '').toLowerCase() === 'medium' ? 'badge-warning' : 'badge-neutral'}`}>{alert.severity}</span>
+                                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginTop: 8 }}>{alert.patient?.fullName || 'Unknown Patient'}</p>
+                                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{alert.message}</p>
                                 </div>
-                                <p className="text-base font-bold text-primary">{alert.patient?.fullName || 'Unknown Patient'}</p>
-                                <p className="text-sm mt-1 font-medium text-secondary">{alert.message}</p>
-                                <p className="text-xs mt-2 font-semibold text-muted flex items-center gap-1">
-                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', display: 'inline-block' }} />
-                                    {new Date(alert.createdAt).toLocaleString()}
-                                </p>
+                                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                    {new Date(alert.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                </span>
                             </div>
-
                             {!alert.resolved && (
-                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                                     onClick={() => handleResolve(alert._id)}
-                                    className="btn btn-sm" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: 'none', fontWeight: 700 }}>
-                                    <HiOutlineCheck size={18} /> Resolve
+                                    className="btn btn-sm btn-primary btn-pill" style={{ marginTop: 8 }}>
+                                    <HiOutlineCheck size={16} /> Resolve
                                 </motion.button>
                             )}
                             {alert.resolved && (
-                                <span className="badge badge-success" style={{ padding: '8px 16px', fontSize: '0.8rem' }}>
-                                    ✅ Resolved {alert.resolvedAt && new Date(alert.resolvedAt).toLocaleDateString()}
+                                <span className="badge badge-success" style={{ marginTop: 8, padding: '6px 14px' }}>
+                                    <HiOutlineCheckCircle size={14} style={{ marginRight: 4 }} /> Resolved {alert.resolvedAt && new Date(alert.resolvedAt).toLocaleDateString()}
                                 </span>
                             )}
                         </motion.div>
