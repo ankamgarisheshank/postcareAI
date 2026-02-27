@@ -1,0 +1,20 @@
+{
+    "name": "postcareai",
+    "version": "1.0.0",
+    "description": "Autonomous Patient Follow-up Agent - Full Stack Healthcare AI Application",
+    "private": true,
+    "scripts": {
+        "server": "cd server && npm run dev",
+        "client": "cd client && npm run dev",
+        "install:all": "cd server && npm install && cd ../client && npm install",
+        "build:client": "cd client && npm run build"
+    },
+    "keywords": [
+        "healthcare",
+        "ai",
+        "patient-followup",
+        "postcare"
+    ],
+    "author": "",
+    "license": "ISC"
+}
