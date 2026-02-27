@@ -1,9 +1,17 @@
 const Alert = require('../models/Alert');
+const Patient = require('../models/Patient');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 const getAlerts = asyncHandler(async (req, res) => {
     const { resolved, severity, page = 1, limit = 50 } = req.query;
-    const query = { doctor: req.user._id };
+
+    // Find all patients that belong to this doctor (by ObjectId or doctorPhone)
+    const patientMatch = { $or: [{ doctor: req.user._id }] };
+    if (req.user.phone) patientMatch.$or.push({ doctorPhone: req.user.phone });
+    const patientIds = (await Patient.find(patientMatch).select('_id')).map(p => p._id);
+
+    // Match alerts by doctor field OR by patientId belonging to this doctor
+    const query = { $or: [{ doctor: req.user._id }, { patientId: { $in: patientIds } }] };
     if (resolved !== undefined) query.resolved = resolved === 'true';
     if (severity) query.severity = severity.toLowerCase();
     const skip = (parseInt(page) - 1) * parseInt(limit);
