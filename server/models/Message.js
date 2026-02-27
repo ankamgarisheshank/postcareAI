@@ -20,7 +20,7 @@ const messageSchema = new mongoose.Schema(
         },
         to: {
             type: String,
-            enum: ['patient', 'doctor'],
+            enum: ['patient', 'doctor', 'ai'],
             required: true,
         },
         content: {

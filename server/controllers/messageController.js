@@ -164,11 +164,11 @@ const agentChat = asyncHandler(async (req, res) => {
 
     const role = req.user.role === 'doctor' ? 'doctor' : 'patient';
 
-    // Store user message
+    // Store user message (to AI)
     await Message.create({
         patientId,
         from: role,
-        to: role === 'doctor' ? 'patient' : 'doctor',
+        to: 'ai',
         content: message,
         channel: 'app',
         isDelivered: true,

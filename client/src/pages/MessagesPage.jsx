@@ -100,14 +100,13 @@ const MessagesPage = () => {
     }, [messages]);
 
     /* -------- filter messages for active tab -------- */
-    // AI tab: show user→AI and AI→user messages
-    // Direct tab: show doctor↔patient messages only (no AI)
+    // AI tab: messages where from=ai or to=ai
+    // Direct tab: doctor↔patient only (no AI involvement)
     const displayMessages = messages.filter((m) => {
         if (activeTab === TABS.AI) {
-            return m.from === 'ai' || m.to === 'ai'
-                || m.from === (isDoctor ? 'doctor' : 'patient');
+            return m.from === 'ai' || m.to === 'ai';
         }
-        return m.from !== 'ai';
+        return m.from !== 'ai' && m.to !== 'ai';
     });
 
     /* -------- send -------- */
