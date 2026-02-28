@@ -27,6 +27,20 @@ const PatientDetailPage = () => {
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     });
     const [schedules, setSchedules] = useState([]);
+    const toDatetimeLocal = (d) => d.toISOString().slice(0, 16);
+    const setPreset = (daysFromNow, hour, minute = 0) => {
+        const d = new Date();
+        d.setDate(d.getDate() + daysFromNow);
+        d.setHours(hour, minute, 0, 0);
+        return toDatetimeLocal(d);
+    };
+    const schedulePresets = [
+        { label: 'Today 6 PM', get: () => setPreset(0, 18) },
+        { label: 'Today 8 PM', get: () => setPreset(0, 20) },
+        { label: 'Tomorrow 8 AM', get: () => setPreset(1, 8) },
+        { label: 'Tomorrow 9 AM', get: () => setPreset(1, 9) },
+        { label: 'Tomorrow 6 PM', get: () => setPreset(1, 18) },
+    ];
     const [scheduleForm, setScheduleForm] = useState({
         scheduledAt: '',
         message: '',
@@ -87,6 +101,14 @@ const PatientDetailPage = () => {
     };
 
     useEffect(() => { if (activeTab === 'schedule') fetchSchedules(); }, [activeTab, id]);
+    useEffect(() => {
+        if (activeTab === 'schedule' && !scheduleForm.scheduledAt) {
+            const d = new Date();
+            d.setDate(d.getDate() + 1);
+            d.setHours(9, 0, 0, 0);
+            setScheduleForm(f => ({ ...f, scheduledAt: toDatetimeLocal(d) }));
+        }
+    }, [activeTab]);
 
     const handleScheduleCall = async (e) => {
         e.preventDefault();
@@ -497,16 +519,40 @@ const PatientDetailPage = () => {
                             <form onSubmit={handleScheduleCall} className="space-y-4">
                                 <div className="input-group">
                                     <label><HiOutlineCalendar size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} /> Date & Time</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={scheduleForm.scheduledAt}
-                                        onChange={e => setScheduleForm(f => ({ ...f, scheduledAt: e.target.value }))}
-                                        className="input-field"
-                                        style={{ height: 46 }}
-                                        min={new Date().toISOString().slice(0, 16)}
-                                        required
-                                        disabled={!patient.phone}
-                                    />
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        <input
+                                            type="datetime-local"
+                                            value={scheduleForm.scheduledAt}
+                                            onChange={e => setScheduleForm(f => ({ ...f, scheduledAt: e.target.value }))}
+                                            className="input-field"
+                                            style={{ height: 46 }}
+                                            min={new Date().toISOString().slice(0, 16)}
+                                            required
+                                            disabled={!patient.phone}
+                                        />
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                            {schedulePresets.map(({ label, get }) => (
+                                                <button
+                                                    key={label}
+                                                    type="button"
+                                                    onClick={() => setScheduleForm(f => ({ ...f, scheduledAt: get() }))}
+                                                    disabled={!patient.phone}
+                                                    style={{
+                                                        padding: '8px 14px',
+                                                        fontSize: 13,
+                                                        borderRadius: 10,
+                                                        border: '1px solid var(--border)',
+                                                        background: 'var(--bg)',
+                                                        color: 'var(--text-secondary)',
+                                                        cursor: patient.phone ? 'pointer' : 'not-allowed',
+                                                        opacity: patient.phone ? 1 : 0.6,
+                                                    }}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="input-group">
                                     <label>Message (spoken by AI)</label>
@@ -520,7 +566,7 @@ const PatientDetailPage = () => {
                                         required
                                         disabled={!patient.phone}
                                     />
-                                    <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>This becomes {'{{metadata.message}}'} in your VAPI assistant prompt.</p>
+                                    <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Use {'{{message}}'} and {'{{customer.name}}'} in your VAPI assistant prompt.</p>
                                 </div>
                                 <div className="flex gap-3" style={{ flexWrap: 'wrap' }}>
                                     <button type="submit" disabled={scheduling || !patient.phone} className="btn btn-primary btn-pill">

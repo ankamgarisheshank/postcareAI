@@ -1,7 +1,7 @@
 /**
  * VAPI Voice AI - Outbound call service
  * Triggers phone calls via VAPI → Twilio → Patient
- * Assistant uses {{customer.name}} and {{metadata.message}} in prompt
+ * Assistant prompt must use {{customer.name}} and {{message}} (via variableValues)
  */
 
 const VAPI_API_URL = 'https://api.vapi.ai/call';
@@ -30,7 +30,9 @@ const createOutboundCall = async (patientPhone, patientName, message) => {
             name: patientName || 'Patient',
         },
         assistantOverrides: {
-            metadata: { message: message || 'Please take your medication as prescribed.' },
+            variableValues: {
+                message: message || 'Please take your medication as prescribed.',
+            },
         },
     };
 

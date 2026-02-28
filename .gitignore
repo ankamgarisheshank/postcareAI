@@ -1,21 +1,34 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# ===== CREDENTIALS — NEVER COMMIT =====
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+**/.env.*.local
+*.pem
+*.key
+secrets/
+credentials/
 
 # Build output
 dist/
 build/
+.next/
+out/
 
-# Uploads
+# Uploads (may contain sensitive data)
 server/uploads/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS files
 .DS_Store
@@ -24,3 +37,10 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.cache/
+coverage/
+.nyc_output/
