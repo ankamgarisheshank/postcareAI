@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getPatient, uploadPrescription, sendEmergency, deletePatient, createCallSchedule, getCallSchedules, cancelCallSchedule, testCall } from '../services/patientService';
+import { getPatient, uploadPrescription, sendEmergency, deletePatient, createCallSchedule, getCallSchedules, cancelCallSchedule, testCall, translateScheduleMessage, processScheduleNow } from '../services/patientService';
 import { addMedication, bulkAddMedications, deleteMedication } from '../services/patientService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast, { Toaster } from 'react-hot-toast';
@@ -47,6 +47,9 @@ const PatientDetailPage = () => {
     });
     const [scheduling, setScheduling] = useState(false);
     const [testCalling, setTestCalling] = useState(false);
+    const [translating, setTranslating] = useState(false);
+    const [translations, setTranslations] = useState(null);
+    const [processingNow, setProcessingNow] = useState(false);
 
     useEffect(() => { fetchPatient(); }, [id]);
     const fetchPatient = async () => {
@@ -110,6 +113,23 @@ const PatientDetailPage = () => {
         }
     }, [activeTab]);
 
+    const handlePreviewTranslations = async () => {
+        if (!scheduleForm.message?.trim()) {
+            toast.error('Enter a message first');
+            return;
+        }
+        setTranslating(true);
+        setTranslations(null);
+        try {
+            const { data } = await translateScheduleMessage(scheduleForm.message.trim());
+            setTranslations(data.data);
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Translation failed');
+        } finally {
+            setTranslating(false);
+        }
+    };
+
     const handleScheduleCall = async (e) => {
         e.preventDefault();
         if (!scheduleForm.scheduledAt || !scheduleForm.message.trim()) {
@@ -123,8 +143,9 @@ const PatientDetailPage = () => {
                 scheduledAt: new Date(scheduleForm.scheduledAt).toISOString(),
                 message: scheduleForm.message.trim(),
             });
-            toast.success('Call scheduled! VAPI will call the patient at the set time.');
+            toast.success('Call scheduled! Message translated to English, Telugu & Hindi. VAPI will ask patient language.');
             setScheduleForm({ scheduledAt: '', message: '' });
+            setTranslations(null);
             fetchSchedules();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to schedule');
@@ -140,11 +161,25 @@ const PatientDetailPage = () => {
         } catch { toast.error('Failed to cancel'); }
     };
 
+    const handleProcessNow = async () => {
+        setProcessingNow(true);
+        try {
+            await processScheduleNow();
+            toast.success('Scheduler ran. Due calls should be placed — check server logs.');
+            fetchSchedules();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed');
+        } finally {
+            setProcessingNow(false);
+        }
+    };
+
     const handleTestCall = async () => {
         if (!patient.phone) { toast.error('Patient has no phone number'); return; }
         setTestCalling(true);
         try {
-            const { data } = await testCall(id, 'This is a test call from PostCare AI. Your doctor is verifying the voice assistant works.');
+            const msg = scheduleForm.message?.trim() || 'This is a test call from PostCare AI. Your doctor is verifying the voice assistant works.';
+            const { data } = await testCall(id, msg);
             toast.success(data.message || 'Call initiated!');
         } catch (err) {
             const msg = err.response?.data?.message || 'Test call failed';
@@ -558,7 +593,7 @@ const PatientDetailPage = () => {
                                     <label>Message (spoken by AI)</label>
                                     <textarea
                                         value={scheduleForm.message}
-                                        onChange={e => setScheduleForm(f => ({ ...f, message: e.target.value }))}
+                                        onChange={e => { setScheduleForm(f => ({ ...f, message: e.target.value })); setTranslations(null); }}
                                         placeholder="e.g. Take your diabetes tablet at 8 PM. Remember to have it after dinner."
                                         className="input-field"
                                         rows={3}
@@ -566,7 +601,33 @@ const PatientDetailPage = () => {
                                         required
                                         disabled={!patient.phone}
                                     />
-                                    <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Use {'{{message}}'} and {'{{customer.name}}'} in your VAPI assistant prompt.</p>
+                                    <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                                        <button
+                                            type="button"
+                                            onClick={handlePreviewTranslations}
+                                            disabled={!patient.phone || !scheduleForm.message?.trim() || translating}
+                                            style={{
+                                                padding: '8px 14px',
+                                                fontSize: 13,
+                                                borderRadius: 10,
+                                                border: '1px solid var(--border)',
+                                                background: 'var(--bg)',
+                                                color: 'var(--text-secondary)',
+                                                cursor: (patient.phone && scheduleForm.message?.trim() && !translating) ? 'pointer' : 'not-allowed',
+                                            }}
+                                        >
+                                            {translating ? 'Translating...' : 'Preview translations'}
+                                        </button>
+                                    </div>
+                                    {translations && (
+                                        <div style={{ marginTop: 12, padding: 14, borderRadius: 12, background: 'var(--bg)', border: '1px solid var(--border-light)' }}>
+                                            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10 }}>Native script translations (VAPI speaks these naturally):</p>
+                                            <p style={{ fontSize: 13, marginBottom: 8 }}><strong>English:</strong> {translations.english}</p>
+                                            <p style={{ fontSize: 13, marginBottom: 8 }}><strong>Telugu:</strong> {translations.teluguMessage}</p>
+                                            <p style={{ fontSize: 13 }}><strong>Hindi:</strong> {translations.hindiMessage}</p>
+                                        </div>
+                                    )}
+                                    <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>VAPI uses {'{{english}}'}, {'{{telugu}}'}, {'{{hindi}}'} (native script) and {'{{customer.name}}'} — ask patient language, then speak the right version.</p>
                                 </div>
                                 <div className="flex gap-3" style={{ flexWrap: 'wrap' }}>
                                     <button type="submit" disabled={scheduling || !patient.phone} className="btn btn-primary btn-pill">
@@ -580,7 +641,12 @@ const PatientDetailPage = () => {
                             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12 }}>Test Call — immediately rings the patient. Use it to verify VAPI is configured correctly.</p>
                         </div>
                         <div className="card">
-                            <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', borderBottom: '1px solid var(--border)', paddingBottom: 10, marginBottom: 16 }}>Upcoming & Past Calls</h3>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>
+                                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>Upcoming & Past Calls</h3>
+                                <button type="button" onClick={handleProcessNow} disabled={processingNow} className="btn btn-outline btn-sm" style={{ fontSize: 12 }}>
+                                    {processingNow ? 'Running...' : '⏩ Process due calls now'}
+                                </button>
+                            </div>
                             {schedules.length === 0 ? (
                                 <p style={{ fontSize: 14, color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>No scheduled calls yet.</p>
                             ) : (
@@ -589,7 +655,12 @@ const PatientDetailPage = () => {
                                         <div key={s._id} className="flex items-center justify-between p-3" style={{ background: 'var(--bg)', borderRadius: 12, border: '1px solid var(--border-light)' }}>
                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                 <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{new Date(s.scheduledAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
-                                                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{s.message}</p>
+                                                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{s.englishMessage || s.message}</p>
+                                                {(s.teluguMessage || s.hindiMessage) && (
+                                                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, opacity: 0.9 }}>
+                                                        Telugu: {s.teluguMessage} · Hindi: {s.hindiMessage}
+                                                    </p>
+                                                )}
                                                 <span className={`badge ${s.status === 'pending' ? 'badge-warning' : s.status === 'completed' ? 'badge-success' : s.status === 'failed' ? 'badge-danger' : 'badge-neutral'}`} style={{ marginTop: 6 }}>{s.status}</span>
                                                 {s.status === 'failed' && s.errorMessage && (
                                                     <p style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6, fontWeight: 500 }}>Why: {s.errorMessage}</p>

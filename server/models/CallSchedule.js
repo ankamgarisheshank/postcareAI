@@ -5,7 +5,10 @@ const callScheduleSchema = new mongoose.Schema(
         patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient', required: true },
         doctor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         scheduledAt: { type: Date, required: true },
-        message: { type: String, required: true, trim: true },
+        message: { type: String, trim: true },
+        englishMessage: { type: String, trim: true },
+        teluguMessage: { type: String, trim: true },
+        hindiMessage: { type: String, trim: true },
         status: {
             type: String,
             enum: ['pending', 'completed', 'failed', 'cancelled'],

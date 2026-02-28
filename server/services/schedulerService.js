@@ -353,12 +353,12 @@ const processScheduledCalls = async () => {
             status: 'pending',
             scheduledAt: { $lte: now },
         })
-            .populate('patientId', 'name phone')
+            .populate('patientId', 'name phone fullName')
             .limit(10);
 
         if (dueSchedules.length === 0) return;
 
-        console.log(`📞 Processing ${dueSchedules.length} scheduled VAPI call(s)...`);
+        console.log(`📞 [${now.toISOString()}] Processing ${dueSchedules.length} scheduled VAPI call(s)...`);
 
         for (const schedule of dueSchedules) {
             const patient = schedule.patientId;
@@ -370,19 +370,24 @@ const processScheduledCalls = async () => {
             }
 
             try {
+                const messages = (schedule.englishMessage || schedule.teluguMessage || schedule.hindiMessage)
+                    ? { english: schedule.englishMessage || schedule.message, teluguMessage: schedule.teluguMessage || schedule.message, hindiMessage: schedule.hindiMessage || schedule.message }
+                    : (schedule.message || 'Please take your medication as prescribed.');
                 const result = await createOutboundCall(
                     patient.phone,
                     patient.name || patient.fullName,
-                    schedule.message
+                    messages
                 );
 
                 if (result.success) {
                     schedule.status = 'completed';
                     schedule.vapiCallId = result.callId;
                     schedule.completedAt = new Date();
+                    console.log(`  ✅ Call placed: ${patient.name || patient.fullName} → ${patient.phone}`);
                 } else {
                     schedule.status = 'failed';
                     schedule.errorMessage = result.error || 'Unknown error';
+                    console.error(`  ❌ Call failed for ${patient.name || patient.fullName}: ${result.error}`);
                 }
             } catch (err) {
                 schedule.status = 'failed';
@@ -395,4 +400,4 @@ const processScheduledCalls = async () => {
     }
 };
 
-module.exports = { initScheduler };
+module.exports = { initScheduler, processScheduledCalls };

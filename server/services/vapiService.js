@@ -1,12 +1,13 @@
 /**
  * VAPI Voice AI - Outbound call service
  * Triggers phone calls via VAPI → Twilio → Patient
- * Assistant prompt must use {{customer.name}} and {{message}} (via variableValues)
+ * Assistant prompt uses {{customer.name}}, {{english}}, {{telugu}}, {{hindi}}
+ * All 3 are native script — modern voice models speak Unicode naturally.
  */
 
 const VAPI_API_URL = 'https://api.vapi.ai/call';
 
-const createOutboundCall = async (patientPhone, patientName, message) => {
+const createOutboundCall = async (patientPhone, patientName, messages) => {
     const apiKey = process.env.VAPI_PRIVATE_KEY || process.env.VAPI_API_KEY;
     const assistantId = process.env.VAPI_ASSISTANT_ID;
     const phoneNumberId = process.env.VAPI_PHONE_NUMBER_ID;
@@ -22,6 +23,12 @@ const createOutboundCall = async (patientPhone, patientName, message) => {
         number = number.startsWith('0') ? '+91' + number.slice(1) : '+91' + number;
     }
 
+    // Support legacy: messages can be a string or { english, teluguMessage, hindiMessage }
+    const english = typeof messages === 'string' ? messages : (messages?.english || messages?.englishMessage || '');
+    const telugu = typeof messages === 'string' ? messages : (messages?.teluguMessage || messages?.telugu || '');
+    const hindi = typeof messages === 'string' ? messages : (messages?.hindiMessage || messages?.hindi || '');
+    const fallback = 'Please take your medication as prescribed.';
+
     const body = {
         assistantId,
         phoneNumberId,
@@ -31,7 +38,9 @@ const createOutboundCall = async (patientPhone, patientName, message) => {
         },
         assistantOverrides: {
             variableValues: {
-                message: message || 'Please take your medication as prescribed.',
+                english: english || fallback,
+                telugu: telugu || english || fallback,
+                hindi: hindi || english || fallback,
             },
         },
     };

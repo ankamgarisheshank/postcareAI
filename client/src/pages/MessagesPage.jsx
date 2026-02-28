@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import {
     HiOutlineChatAlt2, HiOutlinePaperAirplane, HiOutlineSparkles,
-    HiOutlineUser, HiOutlineUserCircle, HiOutlineChevronDown,
+    HiOutlineUser, HiOutlineUserCircle, HiOutlineChevronDown, HiOutlineSearch,
 } from 'react-icons/hi';
 
 const TABS = { AI: 'ai', DIRECT: 'direct' };
@@ -20,8 +20,19 @@ const MessagesPage = () => {
     const [input, setInput] = useState('');
     const [sending, setSending] = useState(false);
     const [loadingHistory, setLoadingHistory] = useState(false);
+    const [patientDropdownOpen, setPatientDropdownOpen] = useState(false);
+    const [patientSearch, setPatientSearch] = useState('');
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setPatientDropdownOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => { if (isDoctor) api.get('/patients').then(({ data }) => setPatients(data.data || [])).catch(() => toast.error('Failed to load patients')); }, [isDoctor]);
 
@@ -92,16 +103,164 @@ const MessagesPage = () => {
 
                 {/* Patient Selector */}
                 {isDoctor && (
-                    <div className="flex items-center gap-3" style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--bg-input)', border: '1px solid var(--border)', marginBottom: 10 }}>
-                        <HiOutlineUser size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                        <div style={{ position: 'relative', flex: 1 }}>
-                            <select value={selectedPatientId} onChange={e => setSelectedPatientId(e.target.value)}
-                                className="input-field" style={{ border: 'none', padding: '6px 28px 6px 0', background: 'transparent', height: 'auto', fontSize: 13 }}>
-                                <option value="">Select a patient...</option>
-                                {patients.map(p => <option key={p._id} value={p._id}>{p.name} — {p.surgeryType || 'N/A'} {p.phone ? `(${p.phone})` : ''}</option>)}
-                            </select>
-                        </div>
-                        {selectedPatient && <span className="badge badge-info">{selectedPatient.riskStatus || selectedPatient.riskLevel || 'Active'}</span>}
+                    <div ref={dropdownRef} style={{ position: 'relative', marginBottom: 12 }}>
+                        <button
+                            type="button"
+                            onClick={() => setPatientDropdownOpen(o => !o)}
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                padding: '14px 16px',
+                                borderRadius: 14,
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.2s',
+                                boxShadow: 'var(--shadow-sm)',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text-muted)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
+                        >
+                            <div style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 12,
+                                background: selectedPatient ? 'var(--accent-bg)' : 'var(--bg-input)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 700,
+                                fontSize: 16,
+                                color: selectedPatient ? 'var(--accent)' : 'var(--text-muted)',
+                                flexShrink: 0,
+                            }}>
+                                {selectedPatient ? (selectedPatient.fullName || selectedPatient.name || '?').charAt(0).toUpperCase() : <HiOutlineUser size={22} />}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                                    {selectedPatient ? (selectedPatient.fullName || selectedPatient.name) : 'Select patient to message'}
+                                </p>
+                                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                                    {selectedPatient ? `${selectedPatient.surgeryType || 'General care'} • ${selectedPatient.phone || 'No phone'}` : `${patients.length} patient${patients.length !== 1 ? 's' : ''} available`}
+                                </p>
+                            </div>
+                            {selectedPatient && (
+                                <span className="badge" style={{
+                                    background: selectedPatient.riskStatus === 'critical' ? 'rgba(239,68,68,0.15)' : 'var(--accent-bg)',
+                                    color: selectedPatient.riskStatus === 'critical' ? 'var(--danger)' : 'var(--text-secondary)',
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                }}>
+                                    {selectedPatient.riskStatus || selectedPatient.riskLevel || 'Active'}
+                                </span>
+                            )}
+                            <HiOutlineChevronDown size={20} style={{
+                                color: 'var(--text-muted)',
+                                flexShrink: 0,
+                                transform: patientDropdownOpen ? 'rotate(180deg)' : 'none',
+                                transition: 'transform 0.2s',
+                            }} />
+                        </button>
+
+                        <AnimatePresence>
+                            {patientDropdownOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -8 }}
+                                    transition={{ duration: 0.15 }}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: 0,
+                                        right: 0,
+                                        marginTop: 6,
+                                        background: 'var(--bg-card)',
+                                        borderRadius: 14,
+                                        border: '1px solid var(--border)',
+                                        boxShadow: 'var(--shadow-lg)',
+                                        zIndex: 100,
+                                        overflow: 'hidden',
+                                        maxHeight: 320,
+                                    }}
+                                >
+                                    {patients.length > 4 && (
+                                        <div style={{ padding: 10, borderBottom: '1px solid var(--border)' }}>
+                                            <div style={{ position: 'relative' }}>
+                                                <HiOutlineSearch size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search by name, surgery, phone..."
+                                                    value={patientSearch}
+                                                    onChange={e => setPatientSearch(e.target.value)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '10px 12px 10px 40px',
+                                                        borderRadius: 10,
+                                                        border: '1px solid var(--border)',
+                                                        background: 'var(--bg-input)',
+                                                        fontSize: 13,
+                                                        outline: 'none',
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div style={{ maxHeight: 260, overflowY: 'auto', padding: 8 }}>
+                                        {patients
+                                            .filter(p => !patientSearch.trim() || [p.name, p.fullName, p.surgeryType, p.phone].some(v => String(v || '').toLowerCase().includes(patientSearch.toLowerCase())))
+                                            .map(p => (
+                                                <button
+                                                    key={p._id}
+                                                    type="button"
+                                                    onClick={() => { setSelectedPatientId(p._id); setPatientDropdownOpen(false); setPatientSearch(''); }}
+                                                    style={{
+                                                        width: '100%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 12,
+                                                        padding: '12px 14px',
+                                                        borderRadius: 12,
+                                                        border: 'none',
+                                                        background: selectedPatientId === p._id ? 'var(--accent-bg)' : 'transparent',
+                                                        cursor: 'pointer',
+                                                        textAlign: 'left',
+                                                        transition: 'background 0.15s',
+                                                    }}
+                                                    onMouseEnter={e => { if (selectedPatientId !== p._id) e.currentTarget.style.background = 'var(--bg-input)'; }}
+                                                    onMouseLeave={e => { if (selectedPatientId !== p._id) e.currentTarget.style.background = 'transparent'; }}
+                                                >
+                                                    <div style={{
+                                                        width: 40,
+                                                        height: 40,
+                                                        borderRadius: 10,
+                                                        background: selectedPatientId === p._id ? 'var(--accent)' : 'var(--bg-input)',
+                                                        color: selectedPatientId === p._id ? 'var(--black)' : 'var(--text-secondary)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontWeight: 700,
+                                                        fontSize: 14,
+                                                        flexShrink: 0,
+                                                    }}>
+                                                        {(p.fullName || p.name || '?').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{p.fullName || p.name}</p>
+                                                        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>{p.surgeryType || 'General care'} {p.phone ? `• ${p.phone}` : ''}</p>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        {patients.filter(p => !patientSearch.trim() || [p.name, p.fullName, p.surgeryType, p.phone].some(v => String(v || '').toLowerCase().includes(patientSearch.toLowerCase()))).length === 0 && (
+                                            <p style={{ padding: 20, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>No patients match your search</p>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 )}
 

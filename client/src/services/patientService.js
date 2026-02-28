@@ -36,7 +36,9 @@ export const getNutritionSchedule = (patientId) => api.get(`/nutrition/${patient
 export const setNutritionSchedule = (patientId, data) => api.post(`/nutrition/${patientId}`, data);
 
 // ===== Schedule (VAPI Call) APIs =====
+export const translateScheduleMessage = (message) => api.get('/schedule/translate-preview', { params: { message } });
 export const createCallSchedule = (data) => api.post('/schedule', data);
 export const getCallSchedules = (params) => api.get('/schedule', { params });
 export const cancelCallSchedule = (id) => api.put(`/schedule/${id}/cancel`);
 export const testCall = (patientId, message) => api.post('/schedule/test-call', { patientId, message });
+export const processScheduleNow = () => api.post('/schedule/process-now');
