@@ -19,6 +19,7 @@ const schema = z.object({
     surgeryType: z.string().optional(),
     diagnosis: z.string().optional(),
     riskLevel: z.string().optional(),
+    recoveryScore: z.coerce.number().min(0).max(100).optional(),
 });
 
 const PatientFormPage = () => {
@@ -111,6 +112,12 @@ const PatientFormPage = () => {
                         <Field name="surgeryType" label="Surgery Type" />
                         <Field name="diagnosis" label="Diagnosis" />
                         <Field name="riskLevel" label="Risk Level" options={['Low', 'Medium', 'High']} />
+                        <div className="input-group">
+                            <label>Recovery % (0–100)</label>
+                            <input {...register('recoveryScore')} type="number" min="0" max="100" placeholder="e.g. 70"
+                                className="input-field" style={{ height: 46 }} />
+                            {errors.recoveryScore && <p className="form-error"><span className="form-error-dot" /> {errors.recoveryScore.message}</p>}
+                        </div>
                     </div>
                 </motion.div>
 

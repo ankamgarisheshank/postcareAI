@@ -2,8 +2,21 @@ const CallSchedule = require('../models/CallSchedule');
 const Patient = require('../models/Patient');
 const { createOutboundCall } = require('../services/vapiService');
 const { translateMessage } = require('../services/translationService');
+const { parseScheduleTime } = require('../services/scheduleParseService');
 const { processScheduledCalls } = require('../services/schedulerService');
 const { asyncHandler } = require('../middleware/errorHandler');
+
+const parseTime = asyncHandler(async (req, res) => {
+    const { input } = req.query;
+    if (!input?.trim()) {
+        return res.status(400).json({ success: false, message: 'input query param required (e.g. today 6:35 pm)' });
+    }
+    const result = await parseScheduleTime(input.trim());
+    if (!result.success) {
+        return res.status(400).json({ success: false, message: result.error });
+    }
+    res.json({ success: true, data: result });
+});
 
 const translatePreview = asyncHandler(async (req, res) => {
     const { message } = req.query;
@@ -110,4 +123,4 @@ const processNow = asyncHandler(async (req, res) => {
     res.json({ success: true, message: 'Scheduler ran. Check server logs for results.' });
 });
 
-module.exports = { createSchedule, getSchedules, cancelSchedule, testCall, translatePreview, processNow };
+module.exports = { createSchedule, getSchedules, cancelSchedule, testCall, translatePreview, processNow, parseTime };

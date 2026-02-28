@@ -1,9 +1,12 @@
 const Patient = require('../models/Patient');
+const User = require('../models/User');
 const Prescription = require('../models/Prescription');
 const DailyLog = require('../models/DailyLog');
 const Alert = require('../models/Alert');
 const NutritionSchedule = require('../models/NutritionSchedule');
 const { asyncHandler } = require('../middleware/errorHandler');
+
+const DEFAULT_PATIENT_PASSWORD = '123456';
 const { parsePrescription } = require('../services/geminiService');
 const { sendWhatsAppMessage } = require('../services/twilioService');
 
@@ -25,6 +28,28 @@ const createPatient = asyncHandler(async (req, res) => {
     const patientData = { ...rest, name: rest.name || fullName, doctor: req.user._id, assignedDoctor: req.user.name, doctorPhone: req.user.phone || '' };
     if (patientData.address) { const location = await geocodeAddress(patientData.address); if (location) patientData.location = location; }
     const patient = await Patient.create(patientData);
+
+    // Auto-create patient login: username = phone, password = 123456
+    const phone = (patient.phone || '').trim();
+    if (phone) {
+        let phoneNorm = phone;
+        if (!phoneNorm.startsWith('+')) phoneNorm = phoneNorm.startsWith('0') ? '+91' + phoneNorm.slice(1) : '+91' + phoneNorm;
+        const existingUser = await User.findOne({ $or: [{ phone: phoneNorm }, { phone }] });
+        if (existingUser) {
+            existingUser.linkedPatientId = patient._id;
+            existingUser.name = patient.name;
+            await existingUser.save();
+        } else {
+            await User.create({
+                name: patient.name,
+                phone: phoneNorm,
+                password: DEFAULT_PATIENT_PASSWORD,
+                role: 'patient',
+                linkedPatientId: patient._id,
+            });
+        }
+    }
+
     res.status(201).json({ success: true, data: patient });
 });
 
@@ -38,11 +63,13 @@ const getPatients = asyncHandler(async (req, res) => {
     if (riskLevel) query.riskLevel = riskLevel;
     if (riskStatus) query.riskStatus = riskStatus;
     if (search) { query.$and = [{ $or: [{ name: { $regex: search, $options: 'i' } }, { diagnosis: { $regex: search, $options: 'i' } }, { phone: { $regex: search, $options: 'i' } }] }]; }
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
     const total = await Patient.countDocuments(query);
-    const patients = await Patient.find(query).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+    const patients = await Patient.find(query).sort({ createdAt: -1 }).skip(skip).limit(limitNum);
     const patientsData = patients.map((p) => ({ ...p.toObject(), fullName: p.name }));
-    res.json({ success: true, data: patientsData, pagination: { total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) } });
+    res.json({ success: true, data: patientsData, pagination: { total, page: pageNum, pages: Math.ceil(total / limitNum) } });
 });
 
 const getPatient = asyncHandler(async (req, res) => {

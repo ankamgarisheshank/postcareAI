@@ -20,6 +20,7 @@ const webhookRoutes = require('./routes/webhookRoutes');
 const nutritionRoutes = require('./routes/nutritionRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
+const callLogRoutes = require('./routes/callLogRoutes');
 
 // Initialize Express app
 const app = express();
@@ -70,6 +71,7 @@ app.use('/api/webhook', webhookRoutes);
 app.use('/api/nutrition', nutritionRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/schedule', scheduleRoutes);
+app.use('/api/call-logs', callLogRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

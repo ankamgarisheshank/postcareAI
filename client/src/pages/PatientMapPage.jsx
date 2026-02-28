@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getPatients } from '../services/patientService';
+import { useAuth } from '../context/AuthContext';
+import { getPatients, getMyPatient } from '../services/patientService';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -37,15 +38,20 @@ const getDisplayCoords = (patient, index) => {
 };
 
 const PatientMapPage = () => {
+    const { isDoctor } = useAuth();
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getPatients()
-            .then(({ data }) => setPatients(data.data || []))
+        const fetch = isDoctor ? getPatients() : getMyPatient();
+        fetch
+            .then(({ data }) => {
+                const d = data.data;
+                setPatients(Array.isArray(d) ? d : (d ? [d] : []));
+            })
             .catch(() => toast.error('Failed to load patients'))
             .finally(() => setLoading(false));
-    }, []);
+    }, [isDoctor]);
 
     const center = patients.length > 0
         ? getDisplayCoords(patients[0], 0).coords
@@ -74,7 +80,7 @@ const PatientMapPage = () => {
                     <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Add patients to see them on the map.</p>
                 </div>
             ) : (
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="card map-card" style={{ padding: 0, overflow: 'hidden' }}>
                     <MapContainer center={center} zoom={12} style={{ height: 500, width: '100%', borderRadius: 16 }}>
                         <TileLayer
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSL</a>'

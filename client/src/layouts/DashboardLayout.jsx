@@ -7,6 +7,7 @@ import {
     HiOutlineBell, HiOutlineChartBar, HiOutlineLogout,
     HiOutlineMenu, HiOutlineMap, HiOutlineX,
     HiOutlineHeart, HiOutlineChatAlt2, HiOutlineSearch,
+    HiOutlinePhone,
 } from 'react-icons/hi';
 
 const doctorLinks = [
@@ -17,6 +18,7 @@ const doctorLinks = [
     { path: '/alerts', label: 'Alerts', icon: HiOutlineBell },
     { path: '/analytics', label: 'Analytics', icon: HiOutlineChartBar },
     { path: '/messages', label: 'Messages', icon: HiOutlineChatAlt2 },
+    { path: '/call-logs', label: 'Call Logs', icon: HiOutlinePhone },
 ];
 
 const patientLinks = [
@@ -99,6 +101,12 @@ const DashboardLayout = () => {
                                 Hi {isDoctor ? (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`) : displayName},
                             </h1>
                             <p>Welcome to PostCare AI</p>
+                        </div>
+                        <div className="show-mobile" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 0 }}>
+                            <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
+                                {isDoctor ? 'PostCare AI' : 'My Recovery'}
+                            </h1>
+                            <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{dateStr}</p>
                         </div>
                     </div>
 

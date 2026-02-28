@@ -114,8 +114,15 @@ const loginDoctor = asyncHandler(async (req, res) => {
         throw new Error('Please provide email/phone and password');
     }
 
-    // Find by email or phone
-    const query = email ? { email } : { phone };
+    // Find by email or phone (support both 8074490413 and +918074490413)
+    let query;
+    if (email) {
+        query = { email };
+    } else if (phone) {
+        let phoneNorm = (phone || '').trim();
+        if (!phoneNorm.startsWith('+')) phoneNorm = phoneNorm.startsWith('0') ? '+91' + phoneNorm.slice(1) : '+91' + phoneNorm;
+        query = { $or: [{ phone }, { phone: phoneNorm }] };
+    }
     const user = await User.findOne(query).select('+password');
     if (!user) {
         res.status(401);

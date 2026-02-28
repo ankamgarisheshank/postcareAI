@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { getMyPatient } from '../services/patientService';
 import toast from 'react-hot-toast';
 import {
     HiOutlineChatAlt2, HiOutlinePaperAirplane, HiOutlineSparkles,
@@ -39,7 +40,7 @@ const MessagesPage = () => {
     useEffect(() => {
         if (isPatient) {
             if (user?.linkedPatientId) setSelectedPatientId(user.linkedPatientId);
-            else if (user?.phone) api.get('/patients').then(({ data }) => { const m = (data.data || []).find(p => p.phone === user.phone || p.phone === user.phone?.replace(/^\+91/, '')); if (m) setSelectedPatientId(m._id); }).catch(() => { });
+            else getMyPatient().then(({ data }) => { const p = data?.data; if (p?._id) setSelectedPatientId(p._id); }).catch(() => { });
         }
     }, [isPatient, user]);
 
@@ -84,9 +85,9 @@ const MessagesPage = () => {
     const noPatientSelected = !selectedPatientId;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)' }}>
+        <div className="messages-page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)', minHeight: 0 }}>
             {/* Header */}
-            <div style={{ padding: '16px 24px 12px', flexShrink: 0 }}>
+            <div style={{ padding: '16px 24px 12px', flexShrink: 0 }} className="messages-header">
                 <div className="flex items-center gap-3" style={{ marginBottom: 14 }}>
                     <div style={{ width: 42, height: 42, borderRadius: 12, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <HiOutlineChatAlt2 size={20} color="var(--black)" />

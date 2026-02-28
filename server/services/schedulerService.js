@@ -4,6 +4,7 @@ const Patient = require('../models/Patient');
 const Alert = require('../models/Alert');
 const Message = require('../models/Message');
 const CallSchedule = require('../models/CallSchedule');
+const CallLog = require('../models/CallLog');
 const { createOutboundCall } = require('./vapiService');
 
 /* ------------------------------------------------------------------ */
@@ -383,6 +384,18 @@ const processScheduledCalls = async () => {
                     schedule.status = 'completed';
                     schedule.vapiCallId = result.callId;
                     schedule.completedAt = new Date();
+                    await CallLog.create({
+                        vapiCallId: result.callId,
+                        scheduleId: schedule._id,
+                        patientId: patient._id,
+                        doctor: schedule.doctor,
+                        patientName: patient.name || patient.fullName,
+                        patientPhone: patient.phone,
+                        scheduledAt: schedule.scheduledAt,
+                        startedAt: new Date(),
+                        message: schedule.englishMessage || schedule.message,
+                        status: 'initiated',
+                    });
                     console.log(`  ✅ Call placed: ${patient.name || patient.fullName} → ${patient.phone}`);
                 } else {
                     schedule.status = 'failed';

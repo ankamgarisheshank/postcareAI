@@ -16,6 +16,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import PatientMapPage from './pages/PatientMapPage';
 import MyRecoveryPage from './pages/MyRecoveryPage';
 import MessagesPage from './pages/MessagesPage';
+import CallLogsPage from './pages/CallLogsPage';
 
 import { useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
@@ -65,6 +66,7 @@ function AppContent() {
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/messages" element={<MessagesPage />} />
+              <Route path="/call-logs" element={<CallLogsPage />} />
               {/* Patient routes */}
               <Route path="/my-recovery" element={<MyRecoveryPage />} />
             </Route>

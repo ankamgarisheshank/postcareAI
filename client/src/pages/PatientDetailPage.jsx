@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getPatient, uploadPrescription, sendEmergency, deletePatient, createCallSchedule, getCallSchedules, cancelCallSchedule, testCall, translateScheduleMessage, processScheduleNow } from '../services/patientService';
+import { getPatient, updatePatient, uploadPrescription, sendEmergency, deletePatient, createCallSchedule, getCallSchedules, cancelCallSchedule, testCall, translateScheduleMessage, processScheduleNow, parseScheduleTime } from '../services/patientService';
 import { addMedication, bulkAddMedications, deleteMedication } from '../services/patientService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast, { Toaster } from 'react-hot-toast';
@@ -50,6 +50,12 @@ const PatientDetailPage = () => {
     const [translating, setTranslating] = useState(false);
     const [translations, setTranslations] = useState(null);
     const [processingNow, setProcessingNow] = useState(false);
+    const [scheduleChatInput, setScheduleChatInput] = useState('');
+    const [parsingTime, setParsingTime] = useState(false);
+    const [recoveryInput, setRecoveryInput] = useState(0);
+    const [updatingRecovery, setUpdatingRecovery] = useState(false);
+
+    useEffect(() => { patient && setRecoveryInput(patient.recoveryScore ?? 0); }, [patient]);
 
     useEffect(() => { fetchPatient(); }, [id]);
     const fetchPatient = async () => {
@@ -161,6 +167,38 @@ const PatientDetailPage = () => {
         } catch { toast.error('Failed to cancel'); }
     };
 
+    const handleParseScheduleTime = async () => {
+        if (!scheduleChatInput?.trim()) {
+            toast.error('Type a time (e.g. today 6:35 pm)');
+            return;
+        }
+        setParsingTime(true);
+        try {
+            const { data } = await parseScheduleTime(scheduleChatInput.trim());
+            setScheduleForm(f => ({ ...f, scheduledAt: data.data.datetimeLocal }));
+            toast.success(`Set to: ${data.data.label || data.data.datetimeLocal}`);
+            setScheduleChatInput('');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Could not parse time');
+        } finally {
+            setParsingTime(false);
+        }
+    };
+
+    const handleUpdateRecovery = async () => {
+        if (recoveryInput < 0 || recoveryInput > 100) return;
+        setUpdatingRecovery(true);
+        try {
+            await updatePatient(id, { recoveryScore: recoveryInput });
+            setPatient(p => ({ ...p, recoveryScore: recoveryInput }));
+            toast.success('Recovery updated');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to update');
+        } finally {
+            setUpdatingRecovery(false);
+        }
+    };
+
     const handleProcessNow = async () => {
         setProcessingNow(true);
         try {
@@ -268,11 +306,30 @@ const PatientDetailPage = () => {
                                         strokeDasharray={`${patient.recoveryScore || 0}, 100`} strokeLinecap="round" />
                                 </svg>
                                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <span style={{ fontSize: 32, fontWeight: 900, color: 'var(--text)' }}>{patient.recoveryScore || 0}%</span>
+                                    <span style={{ fontSize: 32, fontWeight: 900, color: 'var(--text)' }}>{patient.recoveryScore ?? 0}%</span>
                                 </div>
                             </div>
-                            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 16, textAlign: 'center', maxWidth: 200, fontWeight: 500 }}>
-                                Calculated from daily AI health checkups
+                            <div className="flex items-center gap-3" style={{ marginTop: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={recoveryInput}
+                                    onChange={e => setRecoveryInput(Number(e.target.value))}
+                                    style={{ width: 120, accentColor: 'var(--accent)' }}
+                                />
+                                <span style={{ fontSize: 14, fontWeight: 600, minWidth: 36 }}>{recoveryInput}%</span>
+                                <button
+                                    type="button"
+                                    onClick={handleUpdateRecovery}
+                                    disabled={updatingRecovery || recoveryInput === (patient.recoveryScore ?? 0)}
+                                    className="btn btn-primary btn-sm"
+                                >
+                                    {updatingRecovery ? 'Saving...' : 'Update'}
+                                </button>
+                            </div>
+                            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12, textAlign: 'center', maxWidth: 220, fontWeight: 500 }}>
+                                Set manually or auto-calculated from recovery logs
                             </p>
                         </div>
 
@@ -555,6 +612,35 @@ const PatientDetailPage = () => {
                                 <div className="input-group">
                                     <label><HiOutlineCalendar size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} /> Date & Time</label>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                            <input
+                                                type="text"
+                                                value={scheduleChatInput}
+                                                onChange={e => setScheduleChatInput(e.target.value)}
+                                                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleParseScheduleTime())}
+                                                placeholder='e.g. today 6:35 pm, tomorrow 8 am'
+                                                className="input-field"
+                                                style={{ flex: 1, minWidth: 200 }}
+                                                disabled={!patient.phone}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleParseScheduleTime}
+                                                disabled={!patient.phone || !scheduleChatInput?.trim() || parsingTime}
+                                                style={{
+                                                    padding: '10px 16px',
+                                                    borderRadius: 10,
+                                                    border: '1px solid var(--accent)',
+                                                    background: 'var(--accent-bg)',
+                                                    color: 'var(--text)',
+                                                    fontWeight: 600,
+                                                    fontSize: 13,
+                                                    cursor: (patient.phone && scheduleChatInput?.trim() && !parsingTime) ? 'pointer' : 'not-allowed',
+                                                }}
+                                            >
+                                                {parsingTime ? '...' : 'Parse'}
+                                            </button>
+                                        </div>
                                         <input
                                             type="datetime-local"
                                             value={scheduleForm.scheduledAt}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getDashboardStats, getPatients } from '../services/patientService';
+import { useAuth } from '../context/AuthContext';
+import { getDashboardStats, getPatients, getMyPatient } from '../services/patientService';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import toast from 'react-hot-toast';
 import { HiOutlineChartBar, HiOutlineFire, HiOutlineBeaker, HiOutlineClipboardList, HiOutlineExclamationCircle, HiOutlineTrendingUp } from 'react-icons/hi';
@@ -8,18 +9,20 @@ import { HiOutlineChartBar, HiOutlineFire, HiOutlineBeaker, HiOutlineClipboardLi
 const COLORS = ['#111', '#C8FF00', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6'];
 
 const AnalyticsPage = () => {
+    const { isDoctor } = useAuth();
     const [data, setData] = useState(null);
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const fetchPatients = isDoctor ? getPatients().then(r => r.data?.data || []) : getMyPatient().then(r => { const d = r.data?.data; return Array.isArray(d) ? d : (d ? [d] : []); });
         Promise.all([
-            getDashboardStats().then(r => r.data?.data),
-            getPatients().then(r => r.data?.data || []),
+            isDoctor ? getDashboardStats().then(r => r.data?.data) : Promise.resolve(null),
+            fetchPatients,
         ]).then(([d, p]) => { setData(d); setPatients(p); })
             .catch(() => toast.error('Failed to load analytics'))
             .finally(() => setLoading(false));
-    }, []);
+    }, [isDoctor]);
 
     if (loading) return (
         <div className="space-y-5">

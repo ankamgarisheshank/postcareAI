@@ -55,7 +55,9 @@ body {
   color: var(--text);
   line-height: 1.5;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 a {
@@ -358,12 +360,19 @@ img {
   backdrop-filter: blur(4px);
 }
 
+/* ===== MOBILE RESPONSIVE ===== */
+.show-mobile {
+  display: none !important;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
-    width: 240px;
+    width: 280px;
+    max-width: 85vw;
     align-items: flex-start;
     padding: 24px 16px 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0));
   }
 
   .sidebar.open {
@@ -372,10 +381,11 @@ img {
 
   .sidebar-link {
     width: 100%;
+    min-height: 48px;
     height: auto;
     justify-content: flex-start;
     gap: 12px;
-    padding: 12px 16px;
+    padding: 14px 16px;
     font-size: 14px;
     font-weight: 500;
   }
@@ -390,6 +400,8 @@ img {
 
   .mobile-menu-btn {
     display: flex;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .mobile-overlay.show {
@@ -398,18 +410,189 @@ img {
 
   .main-content {
     margin-left: 0;
+    overflow-x: hidden;
   }
 
   .page-content {
-    padding: 20px 16px 32px;
+    padding: 16px 16px calc(32px + env(safe-area-inset-bottom, 0));
   }
 
   .topbar {
-    padding: 16px 16px 0;
+    padding: 12px 16px 0;
+    padding-top: calc(12px + env(safe-area-inset-top, 0));
+  }
+
+  .topbar-greeting h1 {
+    font-size: 18px;
   }
 
   .hide-mobile {
     display: none !important;
+  }
+
+  .show-mobile {
+    display: flex !important;
+  }
+
+  /* Cards */
+  .card {
+    padding: 18px 16px;
+    border-radius: 14px;
+  }
+
+  .stat-card {
+    padding: 18px 16px;
+    flex-wrap: wrap;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  /* Grids stack on mobile */
+  .grid[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .space-y-5 > * + *,
+  .space-y-6 > * + * {
+    margin-top: 16px;
+  }
+
+  /* ResponsiveContainer charts */
+  .recharts-responsive-container {
+    min-height: 240px !important;
+  }
+
+  /* Page titles */
+  .page-content > div > h1,
+  .space-y-6 h1:first-child {
+    font-size: 22px !important;
+  }
+
+  /* Search bar full width */
+  .search-bar[style*="minWidth"] {
+    min-width: 100% !important;
+  }
+
+  /* Patient cards */
+  .patient-card {
+    padding: 16px !important;
+  }
+
+  /* Messages page */
+  .messages-page {
+    height: calc(100vh - 60px) !important;
+    height: calc(100dvh - 60px) !important;
+  }
+
+  .messages-header {
+    padding: 12px 16px 10px !important;
+  }
+
+  /* Map page */
+  .map-card > div {
+    height: 320px !important;
+    min-height: 320px !important;
+  }
+
+  /* Auth */
+  .auth-bg {
+    padding: 20px 16px;
+    align-items: flex-start;
+    padding-top: max(20px, env(safe-area-inset-top));
+  }
+
+  .auth-card {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  /* Tabs */
+  .tabs-container {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+
+  .tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 12px 18px;
+    min-height: 44px;
+  }
+
+  .btn-pill {
+    padding: 12px 20px;
+  }
+
+  /* Inputs */
+  .input-field {
+    padding: 14px 16px;
+    min-height: 48px;
+  }
+
+  .input-field.has-icon {
+    padding-left: 48px;
+  }
+
+  /* Table scroll */
+  .table-wrap {
+    margin: 0 -16px;
+    border-radius: 0;
+  }
+
+  .table-wrap table {
+    min-width: 500px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content {
+    padding: 12px 12px calc(24px + env(safe-area-inset-bottom, 0));
+  }
+
+  .topbar {
+    padding: 10px 12px 0;
+  }
+
+  .card {
+    padding: 16px 14px;
+  }
+
+  .auth-card {
+    padding: 20px 16px;
+  }
+
+  .auth-logo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .auth-logo span {
+    font-size: 24px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  /* Full-width buttons only when alone in a column */
+  .flex.gap-3,
+  .flex[style*="gap: 8"],
+  .flex[style*="gap: 12"] {
+    flex-wrap: wrap;
   }
 }
 
