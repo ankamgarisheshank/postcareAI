@@ -1,0 +1,49 @@
+import api from './api';
+
+// ===== Patient APIs =====
+export const getPatients = (params) => api.get('/patients', { params });
+export const getPatient = (id) => api.get(`/patients/${id}`);
+export const getMyPatient = () => api.get('/patients/me');
+export const createPatient = (data) => api.post('/patients', data);
+export const updatePatient = (id, data) => api.put(`/patients/${id}`, data);
+export const deletePatient = (id) => api.delete(`/patients/${id}`);
+export const uploadPrescription = (id, formData) =>
+    api.post(`/patients/${id}/prescription`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+export const sendEmergency = (id, data) => api.post(`/patients/${id}/emergency`, data);
+
+// ===== Medication APIs =====
+export const getMedications = (patientId) => api.get(`/medications/${patientId}`);
+export const addMedication = (data) => api.post('/medications', data);
+export const bulkAddMedications = (data) => api.post('/medications/bulk', data);
+export const updateMedication = (id, data) => api.put(`/medications/${id}`, data);
+export const deleteMedication = (id) => api.delete(`/medications/${id}`);
+
+// ===== Recovery APIs =====
+export const getRecoveryLogs = (patientId, params) => api.get(`/recovery/${patientId}`, { params });
+export const addRecoveryLog = (patientId, data) => api.post(`/recovery/${patientId}`, data);
+
+// ===== Alert APIs =====
+export const getAlerts = (params) => api.get('/alerts', { params });
+export const resolveAlert = (id) => api.put(`/alerts/${id}/resolve`);
+export const getAlertStats = () => api.get('/alerts/stats');
+
+// ===== Dashboard APIs =====
+export const getDashboardStats = () => api.get('/dashboard/stats');
+
+// ===== Nutrition APIs =====
+export const getNutritionSchedule = (patientId) => api.get(`/nutrition/${patientId}`);
+export const setNutritionSchedule = (patientId, data) => api.post(`/nutrition/${patientId}`, data);
+
+// ===== Schedule (VAPI Call) APIs =====
+export const parseScheduleTime = (input) => api.get('/schedule/parse-time', { params: { input } });
+export const translateScheduleMessage = (message) => api.get('/schedule/translate-preview', { params: { message } });
+export const createCallSchedule = (data) => api.post('/schedule', data);
+export const getCallSchedules = (params) => api.get('/schedule', { params });
+export const cancelCallSchedule = (id) => api.put(`/schedule/${id}/cancel`);
+export const testCall = (patientId, message) => api.post('/schedule/test-call', { patientId, message });
+export const processScheduleNow = () => api.post('/schedule/process-now');
+
+// ===== Call Logs APIs =====
+export const getCallLogs = (params) => api.get('/call-logs', { params });

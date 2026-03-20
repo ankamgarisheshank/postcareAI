@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# ===== CREDENTIALS — NEVER COMMIT =====
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+**/.env.*.local
+*.pem
+*.key
+secrets/
+credentials/
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Uploads (may contain sensitive data)
+server/uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.cache/
+coverage/
+.nyc_output/
