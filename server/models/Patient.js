@@ -1,9 +1,21 @@
 const mongoose = require('mongoose');
 
 /**
- * Unified Patient Schema
- * Compatible with BOTH mobile app (Next.js) and web app (Express).
- * Mobile field names are canonical; web-specific fields are optional extensions.
+ * Patient Schema definition.
+ * 
+ * This model represents a patient in the PostCare AI system. It includes core demographic 
+ * data, surgical history, and real-time health monitoring status (riskStatus, recoveryScore).
+ * 
+ * The schema is designed to be trilingual-friendly and supports both mobile and 
+ * web dashboard interactions.
+ * 
+ * @typedef {Object} Patient
+ * @property {string} name - Full name of the patient
+ * @property {number} age - Patient's current age
+ * @property {string} gender - Male, Female, or Other
+ * @property {string} phone - Mobile number for SMS/WhatsApp notifications
+ * @property {string} surgeryType - The type of surgery performed
+ * @property {string} riskStatus - Health status: stable, monitor, or critical
  */
 const patientSchema = new mongoose.Schema(
     {
