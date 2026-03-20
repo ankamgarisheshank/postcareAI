@@ -78,8 +78,11 @@ app.get('/api/health', (req, res) => {
     res.json({
         success: true,
         message: 'PostCare AI Server is running',
+        status: 'Operational',
+        uptime: process.uptime(),
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV,
+        version: '1.0.1',
     });
 });
 
